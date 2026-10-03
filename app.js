@@ -1,0 +1,204 @@
+const CONFIG_KEY = "egydrugs-admin-config";
+const PAGE_SIZE = 40;
+const DEFAULT_CONFIG = {
+  url: "https://lfxdgtbsmomafyaolndh.supabase.co",
+  key: "sb_publishable_A9K53JorCDERk7MtJG5wiw_z_Jm0bX0"
+};
+const fields = ["id", "commercial_name_en", "commercial_name_ar", "scientific_name", "manufacturer", "drug_class", "route", "price_egp", "dosage"];
+
+let client;
+let page = 0;
+let hasMore = false;
+let lastRows = [];
+let searchTimer;
+
+const byId = (id) => document.getElementById(id);
+const app = byId("app");
+const loginView = byId("login-view");
+const setupView = byId("setup-view");
+const notice = byId("notice");
+const body = byId("drugs-body");
+const emptyState = byId("empty-state");
+const dialog = byId("drug-dialog");
+
+function refreshIcons() { window.lucide?.createIcons(); }
+function savedConfig() {
+  try { return { ...DEFAULT_CONFIG, ...(JSON.parse(localStorage.getItem(CONFIG_KEY) || "{}")) }; }
+  catch { return DEFAULT_CONFIG; }
+}
+function show(view) {
+  app.hidden = view !== "app";
+  loginView.hidden = view !== "login";
+  setupView.hidden = view !== "setup";
+  refreshIcons();
+}
+function setNotice(message = "", isError = false) {
+  notice.textContent = message;
+  notice.classList.toggle("error", isError);
+}
+function configuredClient() {
+  const config = savedConfig();
+  if (!config?.url || !config?.key) return false;
+  client = window.supabase.createClient(config.url, config.key);
+  return true;
+}
+function formattedPrice(value) {
+  if (value === null || value === undefined) return "غير مسجل";
+  return `${new Intl.NumberFormat("ar-EG", { maximumFractionDigits: 2 }).format(value)} ج.م`;
+}
+function safeSearchTerm(value) { return value.trim().replace(/[,%()]/g, ""); }
+function escapeHtml(value) {
+  return String(value).replace(/[&<>'"]/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" })[character]);
+}
+function rowMarkup(drug) {
+  const arabicName = drug.commercial_name_ar ? `<small>${escapeHtml(drug.commercial_name_ar)}</small>` : "";
+  return `<tr>
+    <td class="medicine-name">${escapeHtml(drug.commercial_name_en)}${arabicName}</td>
+    <td>${escapeHtml(drug.scientific_name || "-")}</td>
+    <td class="muted-cell">${escapeHtml(drug.manufacturer || "-")}</td>
+    <td class="price">${formattedPrice(drug.price_egp)}</td>
+    <td><div class="row-actions">
+      <button class="icon-button" type="button" data-action="edit" data-id="${drug.id}" title="تعديل" aria-label="تعديل ${escapeHtml(drug.commercial_name_en)}"><i data-lucide="pencil"></i></button>
+      <button class="icon-button delete-button" type="button" data-action="delete" data-id="${drug.id}" title="حذف" aria-label="حذف ${escapeHtml(drug.commercial_name_en)}"><i data-lucide="trash-2"></i></button>
+    </div></td>
+  </tr>`;
+}
+function renderRows(rows) {
+  body.innerHTML = rows.map(rowMarkup).join("");
+  emptyState.hidden = rows.length > 0;
+  byId("previous-page").disabled = page === 0;
+  byId("next-page").disabled = !hasMore;
+  byId("page-label").textContent = `صفحة ${page + 1}`;
+  refreshIcons();
+}
+
+async function loadDrugs() {
+  if (!client) return;
+  setNotice("جاري تحميل الأدوية...");
+  const term = safeSearchTerm(byId("search").value);
+  const from = page * PAGE_SIZE;
+  let query = client.from("drugs").select(fields.join(",")).order("id", { ascending: false }).range(from, from + PAGE_SIZE);
+  if (term) {
+    const pattern = `%${term}%`;
+    query = query.or([`commercial_name_en.ilike.${pattern}`, `commercial_name_ar.ilike.${pattern}`, `scientific_name.ilike.${pattern}`].join(","));
+  }
+  const { data, error } = await query;
+  if (error) {
+    renderRows([]);
+    setNotice(`تعذر تحميل الأدوية: ${error.message}`, true);
+    return;
+  }
+  hasMore = data.length > PAGE_SIZE;
+  lastRows = data.slice(0, PAGE_SIZE);
+  renderRows(lastRows);
+  setNotice("");
+}
+async function isDrugAdmin(userId) {
+  const { data, error } = await client.from("drug_admins").select("user_id").eq("user_id", userId).maybeSingle();
+  return !error && Boolean(data);
+}
+async function openApp(session) {
+  if (!session?.user || !(await isDrugAdmin(session.user.id))) {
+    await client.auth.signOut();
+    byId("login-error").textContent = "هذا الحساب غير مسموح له بإدارة الأدوية.";
+    show("login");
+    return;
+  }
+  byId("account-email").textContent = session.user.email || "";
+  show("app");
+  page = 0;
+  await loadDrugs();
+}
+function fillForm(drug) {
+  byId("drug-id").value = drug?.id ?? "";
+  byId("name-en").value = drug?.commercial_name_en ?? "";
+  byId("name-ar").value = drug?.commercial_name_ar ?? "";
+  byId("scientific-name").value = drug?.scientific_name ?? "";
+  byId("manufacturer").value = drug?.manufacturer ?? "";
+  byId("drug-class").value = drug?.drug_class ?? "";
+  byId("route").value = drug?.route ?? "";
+  byId("price").value = drug?.price_egp ?? "";
+  byId("dosage").value = drug?.dosage ?? "";
+  byId("dialog-title").textContent = drug ? "تعديل دواء" : "إضافة دواء";
+  byId("dialog-error").textContent = "";
+}
+function openDialog(drug) {
+  fillForm(drug);
+  dialog.showModal();
+  byId("name-en").focus();
+}
+function drugPayload() {
+  const rawPrice = byId("price").value.trim();
+  return {
+    commercial_name_en: byId("name-en").value.trim(), commercial_name_ar: byId("name-ar").value.trim(),
+    scientific_name: byId("scientific-name").value.trim(), manufacturer: byId("manufacturer").value.trim(),
+    drug_class: byId("drug-class").value.trim(), route: byId("route").value.trim(),
+    price_egp: rawPrice === "" ? null : Number(rawPrice), dosage: byId("dosage").value.trim()
+  };
+}
+async function saveDrug(event) {
+  event.preventDefault();
+  const payload = drugPayload();
+  const id = byId("drug-id").value;
+  const { error } = id ? await client.from("drugs").update(payload).eq("id", id) : await client.from("drugs").insert(payload);
+  if (error) { byId("dialog-error").textContent = `تعذر الحفظ: ${error.message}`; return; }
+  dialog.close();
+  setNotice(id ? "تم تعديل الدواء." : "تمت إضافة الدواء.");
+  await loadDrugs();
+}
+async function deleteDrug(id) {
+  const drug = lastRows.find((item) => String(item.id) === String(id));
+  if (!drug || !window.confirm(`حذف ${drug.commercial_name_en} نهائيًا؟`)) return;
+  const { error } = await client.from("drugs").delete().eq("id", id);
+  if (error) { setNotice(`تعذر الحذف: ${error.message}`, true); return; }
+  setNotice("تم حذف الدواء.");
+  await loadDrugs();
+}
+
+function attachEvents() {
+  byId("setup-form").addEventListener("submit", (event) => {
+    event.preventDefault();
+    const url = byId("project-url").value.trim().replace(/\/$/, "");
+    const key = byId("publishable-key").value.trim();
+    try {
+      new URL(url);
+      localStorage.setItem(CONFIG_KEY, JSON.stringify({ url, key }));
+      location.reload();
+    } catch { byId("setup-error").textContent = "Project URL غير صحيح."; }
+  });
+  byId("login-form").addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const errorElement = byId("login-error");
+    errorElement.textContent = "";
+    const { data, error } = await client.auth.signInWithPassword({ email: byId("login-email").value.trim(), password: byId("login-password").value });
+    if (error) { errorElement.textContent = "تعذر تسجيل الدخول. راجع البريد وكلمة المرور."; return; }
+    await openApp(data.session);
+  });
+  byId("change-config").addEventListener("click", () => show("setup"));
+  byId("sign-out").addEventListener("click", async () => { await client.auth.signOut(); show("login"); });
+  byId("add-drug").addEventListener("click", () => openDialog());
+  byId("close-dialog").addEventListener("click", () => dialog.close());
+  byId("cancel-dialog").addEventListener("click", () => dialog.close());
+  byId("drug-form").addEventListener("submit", saveDrug);
+  body.addEventListener("click", (event) => {
+    const button = event.target.closest("button[data-action]");
+    if (!button) return;
+    const drug = lastRows.find((item) => String(item.id) === button.dataset.id);
+    if (button.dataset.action === "edit") openDialog(drug);
+    if (button.dataset.action === "delete") deleteDrug(button.dataset.id);
+  });
+  byId("search").addEventListener("input", () => {
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(() => { page = 0; loadDrugs(); }, 300);
+  });
+  byId("previous-page").addEventListener("click", () => { if (page > 0) { page -= 1; loadDrugs(); } });
+  byId("next-page").addEventListener("click", () => { if (hasMore) { page += 1; loadDrugs(); } });
+}
+async function start() {
+  attachEvents();
+  if (!configuredClient()) { show("setup"); return; }
+  const { data: { session } } = await client.auth.getSession();
+  if (session) await openApp(session); else show("login");
+}
+start();
+
