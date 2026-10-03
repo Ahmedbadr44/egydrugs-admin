@@ -72,9 +72,9 @@
           <label>الاسم بالإنجليزية<input id="name-en" required /></label>
           <label>الاسم بالعربية<input id="name-ar" /></label>
           <label class="full-width">المادة الفعالة<input id="scientific-name" /></label>
-          <label>الشركة<input id="manufacturer" /></label>
-          <label>التصنيف الدوائي<input id="drug-class" /></label>
-          <label>الشكل الدوائي<input id="route" /></label>
+          <label>الشركة<input id="manufacturer" list="manufacturer-options" autocomplete="off" /><datalist id="manufacturer-options"></datalist><small class="dropdown-hint" id="manufacturer-hint">اختر من القائمة أو اكتب شركة جديدة.</small></label>
+          <label>التصنيف الدوائي<input id="drug-class" list="drug-class-options" autocomplete="off" /><datalist id="drug-class-options"></datalist><small class="dropdown-hint" id="drug-class-hint">اختر من القائمة أو اكتب تصنيفًا جديدًا.</small></label>
+          <label>الشكل الدوائي<input id="route" list="route-options" autocomplete="off" /><datalist id="route-options"></datalist><small class="dropdown-hint" id="route-hint">اختر من القائمة أو اكتب شكلًا دوائيًا جديدًا.</small></label>
           <label>السعر (ج.م)<input id="price" type="number" min="0" step="0.01" /></label>
           <label class="full-width">الجرعة<input id="dosage" /></label>
         </div>

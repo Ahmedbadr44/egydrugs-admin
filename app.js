@@ -1,5 +1,6 @@
 const CONFIG_KEY = "egydrugs-admin-config";
 const PAGE_SIZE = 40;
+const OPTIONS_BATCH_SIZE = 1000;
 const DEFAULT_CONFIG = {
   url: "https://lfxdgtbsmomafyaolndh.supabase.co",
   key: "sb_publishable_A9K53JorCDERk7MtJG5wiw_z_Jm0bX0"
@@ -11,6 +12,13 @@ let page = 0;
 let hasMore = false;
 let lastRows = [];
 let searchTimer;
+let fieldOptionsPromise;
+
+const drugFieldOptions = [
+  { field: "manufacturer", datalistId: "manufacturer-options", hintId: "manufacturer-hint", loadingText: "الشركة", emptyText: "اكتب شركة جديدة." },
+  { field: "drug_class", datalistId: "drug-class-options", hintId: "drug-class-hint", loadingText: "التصنيف الدوائي", emptyText: "اكتب تصنيفًا جديدًا." },
+  { field: "route", datalistId: "route-options", hintId: "route-hint", loadingText: "الشكل الدوائي", emptyText: "اكتب شكلًا دوائيًا جديدًا." }
+];
 
 const byId = (id) => document.getElementById(id);
 const app = byId("app");
@@ -70,6 +78,49 @@ function renderRows(rows, showEmptyState = true) {
   byId("next-page").disabled = !hasMore;
   byId("page-label").textContent = `صفحة ${page + 1}`;
   refreshIcons();
+}
+
+async function loadDrugFieldOptions() {
+  if (!fieldOptionsPromise) {
+    fieldOptionsPromise = (async () => {
+      const valuesByField = new Map(drugFieldOptions.map(({ field }) => [field, new Set()]));
+      let from = 0;
+
+      while (true) {
+        const { data, error } = await client
+          .from("drugs")
+          .select(`id,${drugFieldOptions.map(({ field }) => field).join(",")}`)
+          .order("id", { ascending: true })
+          .range(from, from + OPTIONS_BATCH_SIZE - 1);
+        if (error) throw error;
+
+        for (const drug of data) {
+          for (const { field } of drugFieldOptions) {
+            const value = drug[field]?.trim();
+            if (value) valuesByField.get(field).add(value);
+          }
+        }
+        if (data.length < OPTIONS_BATCH_SIZE) break;
+        from += data.length;
+      }
+
+      for (const { field, datalistId, hintId, emptyText } of drugFieldOptions) {
+        const datalist = byId(datalistId);
+        datalist.replaceChildren();
+        const values = [...valuesByField.get(field)].sort((first, second) => first.localeCompare(second, "ar"));
+        for (const value of values) {
+          const option = document.createElement("option");
+          option.value = value;
+          datalist.append(option);
+        }
+        byId(hintId).textContent = values.length ? "اختر من القائمة أو اكتب قيمة جديدة." : emptyText;
+      }
+    })().catch((error) => {
+      fieldOptionsPromise = undefined;
+      throw error;
+    });
+  }
+  return fieldOptionsPromise;
 }
 
 async function loadDrugs() {
@@ -140,6 +191,12 @@ function openDialog(drug) {
   fillForm(drug);
   dialog.showModal();
   byId("name-en").focus();
+  for (const { hintId, loadingText } of drugFieldOptions) {
+    byId(hintId).textContent = `جاري تحميل خيارات ${loadingText}...`;
+  }
+  loadDrugFieldOptions().catch((error) => {
+    byId("dialog-error").textContent = `تعذر تحميل خيارات القوائم: ${error.message} يمكنك كتابة قيم جديدة يدويًا.`;
+  });
 }
 function drugPayload() {
   const rawPrice = byId("price").value.trim();
