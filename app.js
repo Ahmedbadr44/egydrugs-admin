@@ -63,9 +63,9 @@ function rowMarkup(drug) {
     </div></td>
   </tr>`;
 }
-function renderRows(rows) {
+function renderRows(rows, showEmptyState = true) {
   body.innerHTML = rows.map(rowMarkup).join("");
-  emptyState.hidden = rows.length > 0;
+  emptyState.hidden = rows.length > 0 || !showEmptyState;
   byId("previous-page").disabled = page === 0;
   byId("next-page").disabled = !hasMore;
   byId("page-label").textContent = `صفحة ${page + 1}`;
@@ -84,7 +84,7 @@ async function loadDrugs() {
   }
   const { data, error } = await query;
   if (error) {
-    renderRows([]);
+    renderRows([], false);
     setNotice(`تعذر تحميل الأدوية: ${error.message}`, true);
     return;
   }
@@ -95,12 +95,26 @@ async function loadDrugs() {
 }
 async function isDrugAdmin(userId) {
   const { data, error } = await client.from("drug_admins").select("user_id").eq("user_id", userId).maybeSingle();
-  return !error && Boolean(data);
+  if (error) throw error;
+  return Boolean(data);
 }
 async function openApp(session) {
-  if (!session?.user || !(await isDrugAdmin(session.user.id))) {
-    await client.auth.signOut();
+  if (!session?.user) {
+    show("login");
+    return;
+  }
+  let isAdmin;
+  try {
+    isAdmin = await isDrugAdmin(session.user.id);
+  } catch (error) {
+    byId("login-error").textContent = `تعذر التحقق من صلاحيات المشرف: ${error.message}`;
+    show("login");
+    return;
+  }
+  if (!isAdmin) {
+    const { error } = await client.auth.signOut();
     byId("login-error").textContent = "هذا الحساب غير مسموح له بإدارة الأدوية.";
+    if (error) byId("login-error").textContent += ` تعذر إنهاء الجلسة: ${error.message}`;
     show("login");
     return;
   }
@@ -160,22 +174,40 @@ function attachEvents() {
     event.preventDefault();
     const url = byId("project-url").value.trim().replace(/\/$/, "");
     const key = byId("publishable-key").value.trim();
+    let parsedUrl;
     try {
-      new URL(url);
+      parsedUrl = new URL(url);
+    } catch {
+      byId("setup-error").textContent = "Project URL غير صحيح.";
+      return;
+    }
+    const isSupabaseHost = parsedUrl.protocol === "https:" && parsedUrl.hostname.endsWith(".supabase.co");
+    const isLocalHttp = parsedUrl.protocol === "http:" && ["localhost", "127.0.0.1"].includes(parsedUrl.hostname);
+    if ((!isSupabaseHost && !isLocalHttp) || !key) {
+      byId("setup-error").textContent = "أدخل رابط مشروع Supabase آمنًا ومفتاح Publishable صالحًا.";
+      return;
+    }
+    try {
       localStorage.setItem(CONFIG_KEY, JSON.stringify({ url, key }));
       location.reload();
-    } catch { byId("setup-error").textContent = "Project URL غير صحيح."; }
+    } catch (error) {
+      byId("setup-error").textContent = `تعذر حفظ الإعدادات على هذا الجهاز: ${error.message}`;
+    }
   });
   byId("login-form").addEventListener("submit", async (event) => {
     event.preventDefault();
     const errorElement = byId("login-error");
     errorElement.textContent = "";
     const { data, error } = await client.auth.signInWithPassword({ email: byId("login-email").value.trim(), password: byId("login-password").value });
-    if (error) { errorElement.textContent = "تعذر تسجيل الدخول. راجع البريد وكلمة المرور."; return; }
+    if (error) { errorElement.textContent = `تعذر تسجيل الدخول: ${error.message}`; return; }
     await openApp(data.session);
   });
   byId("change-config").addEventListener("click", () => show("setup"));
-  byId("sign-out").addEventListener("click", async () => { await client.auth.signOut(); show("login"); });
+  byId("sign-out").addEventListener("click", async () => {
+    const { error } = await client.auth.signOut();
+    if (error) { setNotice(`تعذر تسجيل الخروج: ${error.message}`, true); return; }
+    show("login");
+  });
   byId("add-drug").addEventListener("click", () => openDialog());
   byId("close-dialog").addEventListener("click", () => dialog.close());
   byId("cancel-dialog").addEventListener("click", () => dialog.close());
@@ -197,8 +229,13 @@ function attachEvents() {
 async function start() {
   attachEvents();
   if (!configuredClient()) { show("setup"); return; }
-  const { data: { session } } = await client.auth.getSession();
+  const { data, error } = await client.auth.getSession();
+  if (error) {
+    show("login");
+    byId("login-error").textContent = `تعذر استعادة جلسة الدخول: ${error.message}`;
+    return;
+  }
+  const { session } = data;
   if (session) await openApp(session); else show("login");
 }
 start();
-
