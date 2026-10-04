@@ -15,11 +15,23 @@ function lines(v){return String(v||"").split("\n").map(x=>x.trim()).filter(Boole
 function num(v){return new Intl.NumberFormat("ar-EG").format(Number(v||0))}
 async function isAdmin(userId){
   const r=await client.from("drug_admins").select("user_id").eq("user_id",userId).maybeSingle();
-  return !r.error&&Boolean(r.data);
+  if(r.error) return {ok:false,error:r.error};
+  return {ok:true,isAdmin:Boolean(r.data)};
 }
 async function openApp(session){
-  if(!session?.user||!(await isAdmin(session.user.id))){
-    await client.auth.signOut();$("login-error").textContent="هذا الحساب غير مسموح له بإدارة الأدوية.";
+  if(!session?.user){
+    $("login-error").textContent="تم تسجيل الدخول لكن لم يتم إنشاء جلسة.";
+    return;
+  }
+  const admin=await isAdmin(session.user.id);
+  if(!admin.ok){
+    console.error("Admin check failed:",admin.error);
+    $("login-error").textContent="تم تسجيل الدخول، لكن فحص صلاحية المدير فشل: "+admin.error.message;
+    return;
+  }
+  if(!admin.isAdmin){
+    await client.auth.signOut();
+    $("login-error").textContent="الحساب صحيح، لكنه غير موجود في قائمة المدراء.";
     $("login-view").hidden=false;$("app").hidden=true;return;
   }
   $("account-email").textContent=session.user.email||"";
