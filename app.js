@@ -179,7 +179,7 @@ async function saveDatabase(){
     if(r.error){say("تعذر حفظ الدواء رقم "+id+": "+r.error.message,true);return}
     count++;
   }
-  say("تم حفظ "+num(count)+" دواء بنجاح.");
+  say("تم حفظ التعديلات بنجاح.");
   await loadDashboard();await loadDatabase();
 }
 async function loadIngredients(){
