@@ -171,16 +171,24 @@ async function loadDatabase(){
 }
 async function saveDatabase(){
   const rows=[...$("database-body").querySelectorAll("tr[data-id]")];
-  let count=0;
-  for(const row of rows){
+  if(!rows.length){say("لا توجد بيانات للحفظ.");return}
+  say("جاري حفظ التعديلات...");
+  const results=await Promise.all(rows.map(async row=>{
     const id=row.dataset.id,p={};
-    row.querySelectorAll("input[data-field]").forEach(input=>{const v=input.value.trim();p[input.dataset.field]=input.dataset.field==="price_egp"?(v===""?null:Number(v)):v});
-    const r=await client.from("drugs").update(p).eq("id",id);
-    if(r.error){say("تعذر حفظ الدواء رقم "+id+": "+r.error.message,true);return}
-    count++;
+    row.querySelectorAll("input[data-field]").forEach(input=>{
+      const v=input.value.trim();
+      p[input.dataset.field]=input.dataset.field==="price_egp"?(v===""?null:Number(v)):v;
+    });
+    return {id,result:await client.from("drugs").update(p).eq("id",id)};
+  }));
+  const failed=results.find(x=>x.result.error);
+  if(failed){
+    say("تعذر حفظ الدواء رقم "+failed.id+": "+failed.result.error.message,true);
+    return;
   }
   say("تم حفظ التعديلات بنجاح.");
-  await loadDashboard();await loadDatabase();
+  await loadDashboard();
+  await loadDatabase();
 }
 async function loadIngredients(){
   const term=$("ingredient-search").value.trim();
