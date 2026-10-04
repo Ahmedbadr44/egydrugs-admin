@@ -285,22 +285,15 @@ function attach(){
   $("database-prev").addEventListener("click",()=>{if(databasePage>0){databasePage--;loadDatabase()}});
   $("database-next").addEventListener("click",()=>{if(databaseHasMore){databasePage++;loadDatabase()}});
   $("add-drug").addEventListener("click",resetDrug);$("add-drug-2").addEventListener("click",resetDrug);
-  $("drug-form").addEventListener("submit",saveDrug);$("ingredient-form").addEventListener("submit",saveIngredient);
+  $("drug-form").addEventListener("submit",saveDrug);
   $("drug-prev").addEventListener("click",()=>{if(drugPage>0){drugPage--;loadDrugs()}});
   $("drug-next").addEventListener("click",()=>{if(drugHasMore){drugPage++;loadDrugs()}});
-  $("ingredient-prev").addEventListener("click",()=>{if(ingredientPage>0){ingredientPage--;loadIngredients()}});
-  $("ingredient-next").addEventListener("click",()=>{if(ingredientHasMore){ingredientPage++;loadIngredients()}});
   $("clear-drug-search").addEventListener("click",()=>{$("drug-search").value="";$("missing-arabic-only").checked=false;missingArabicOnly=false;drugPage=0;loadDrugs()});
   $("missing-arabic-only").addEventListener("change",e=>{missingArabicOnly=e.target.checked;drugPage=0;loadDrugs()});
   $("drug-search").addEventListener("input",()=>{clearTimeout(drugSearchTimer);drugSearchTimer=setTimeout(()=>{drugPage=0;loadDrugs()},250)});
-  $("ingredient-search").addEventListener("input",()=>{clearTimeout(ingredientSearchTimer);ingredientSearchTimer=setTimeout(()=>{ingredientPage=0;loadIngredients()},250)});
   $("sign-out").addEventListener("click",async()=>{await client.auth.signOut();$("app").hidden=true;$("login-view").hidden=false});
   document.querySelectorAll("[data-close]").forEach(b=>b.addEventListener("click",()=>$(b.dataset.close).close()));
   $("drugs-body").addEventListener("click",e=>{const b=e.target.closest("[data-action]");if(!b)return;if(b.dataset.action==="edit-drug")openDrug(b.dataset.id);if(b.dataset.action==="delete-drug")deleteDrug(b.dataset.id);if(b.dataset.action==="save-arabic"){const input=$("drugs-body").querySelector(`.arabic-inline[data-id="${b.dataset.id}"]`);if(input)saveArabicInline(b.dataset.id,input)}});
-  $("ingredients-body").addEventListener("click",e=>{
-    const b=e.target.closest("button[data-action='edit-ingredient']");
-    if(b){e.preventDefault();openIngredient(b.dataset.key);}
-  });
   $("login-form").addEventListener("submit",async e=>{e.preventDefault();$("login-error").textContent="";const r=await client.auth.signInWithPassword({email:$("login-email").value.trim(),password:$("login-password").value});if(r.error){$("login-error").textContent="تعذر تسجيل الدخول. راجع البريد وكلمة المرور.";return}await openApp(r.data.session)})
 }
 async function start(){client=window.supabase.createClient(CONFIG.url,CONFIG.key);attach();icons();const r=await client.auth.getSession();if(r.error){$("login-error").textContent="تعذر استعادة الجلسة.";return}if(r.data.session)await openApp(r.data.session)}
