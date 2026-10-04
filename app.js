@@ -1,6 +1,6 @@
 const CONFIG={url:"https://lfxdgtbsmomafyaolndh.supabase.co",key:"sb_publishable_A9K53JorCDERk7MtJG5wiw_z_Jm0bX0"};
 const PAGE_SIZE=40,INGREDIENT_PAGE_SIZE=60;
-let client,drugPage=0,ingredientPage=0,drugHasMore=false,ingredientHasMore=false,drugSearchTimer,ingredientSearchTimer,missingArabicOnly=false;
+let client,drugPage=0,ingredientPage=0,drugHasMore=false,ingredientHasMore=false,drugSearchTimer,ingredientSearchTimer,missingArabicOnly=false,databasePage=0,databaseHasMore=false,databaseRows=[];
 const $=id=>document.getElementById(id),toast=$("toast");
 
 function icons(){window.lucide?.createIcons()}
@@ -34,13 +34,15 @@ function setView(view){
     dashboard:["الرئيسية","نظرة سريعة على قاعدة بيانات الأدوية."],
     drugs:["الأدوية","إدارة المنتجات التجارية وبياناتها الأساسية."],
     ingredients:["المواد الفعالة","إدارة المعلومات الطبية المشتركة لكل مادة فعالة."],
-    quality:["جودة البيانات","مراجعة النواقص التي تؤثر على جودة قاعدة البيانات."]
+    quality:["جودة البيانات","مراجعة النواقص التي تؤثر على جودة قاعدة البيانات."],
+    database:["قاعدة البيانات","تعديل بيانات الأدوية مباشرة في جدول شبيه بـ Excel."]
   }[view];
   $("page-title").textContent=meta[0];$("page-subtitle").textContent=meta[1];
   if(view==="dashboard")loadDashboard();
   if(view==="drugs")loadDrugs();
   if(view==="ingredients")loadIngredients();
   if(view==="quality")loadQuality();
+  if(view==="database")loadDatabase();
   icons();
 }
 async function stats(){
@@ -113,6 +115,38 @@ async function loadDrugs(){
   $("drugs-empty").hidden=rows.length>0;
   $("drug-page").textContent="صفحة "+(drugPage+1);$("drug-prev").disabled=drugPage===0;$("drug-next").disabled=!drugHasMore;
   $("drug-result-note").textContent=term?"نتائج البحث عن \""+term+"\"":"آخر الأدوية في القاعدة";icons();
+}
+async function loadDatabase(){
+  const term=$("database-search").value.trim(),from=databasePage*50;
+  let q=client.from("drugs").select("id,commercial_name_en,commercial_name_ar,scientific_name,manufacturer,drug_class,route,price_egp,dosage").order("id",{ascending:true}).range(from,from+50);
+  if(term){const p="%"+term+"%";q=q.or("commercial_name_en.ilike."+p+",commercial_name_ar.ilike."+p+",scientific_name.ilike."+p+",manufacturer.ilike."+p+",drug_class.ilike."+p);}
+  const r=await q;
+  if(r.error){say("تعذر تحميل قاعدة البيانات: "+r.error.message,true);return}
+  databaseHasMore=r.data.length>50;databaseRows=r.data.slice(0,50);
+  $("database-body").innerHTML=databaseRows.map(d=>"<tr data-id=\""+d.id+"\">"+
+    "<td class=\"db-id\">"+d.id+"</td>"+
+    "<td><input data-field=\"commercial_name_en\" value=\""+html(d.commercial_name_en||"")+"\"></td>"+
+    "<td><input data-field=\"commercial_name_ar\" value=\""+html(d.commercial_name_ar||"")+"\"></td>"+
+    "<td><input data-field=\"scientific_name\" value=\""+html(d.scientific_name||"")+"\"></td>"+
+    "<td><input data-field=\"manufacturer\" value=\""+html(d.manufacturer||"")+"\"></td>"+
+    "<td><input data-field=\"drug_class\" value=\""+html(d.drug_class||"")+"\"></td>"+
+    "<td><input data-field=\"route\" value=\""+html(d.route||"")+"\"></td>"+
+    "<td><input data-field=\"price_egp\" type=\"number\" min=\"0\" step=\"0.01\" value=\""+(d.price_egp??"")+"\"></td>"+
+    "<td><input data-field=\"dosage\" value=\""+html(d.dosage||"")+"\"></td></tr>").join("");
+  $("database-page").textContent="صفحة "+(databasePage+1);$("database-prev").disabled=databasePage===0;$("database-next").disabled=!databaseHasMore;icons();
+}
+async function saveDatabase(){
+  const rows=[...$("database-body").querySelectorAll("tr[data-id]")];
+  let count=0;
+  for(const row of rows){
+    const id=row.dataset.id,p={};
+    row.querySelectorAll("input[data-field]").forEach(input=>{const v=input.value.trim();p[input.dataset.field]=input.dataset.field==="price_egp"?(v===""?null:Number(v)):(v||null)});
+    const r=await client.from("drugs").update(p).eq("id",id);
+    if(r.error){say("تعذر حفظ الدواء رقم "+id+": "+r.error.message,true);return}
+    count++;
+  }
+  say("تم حفظ "+num(count)+" دواء بنجاح.");
+  await loadDashboard();await loadDatabase();
 }
 async function loadIngredients(){
   const term=$("ingredient-search").value.trim();
@@ -215,7 +249,7 @@ function attach(){
   document.querySelectorAll(".nav-item[data-view]").forEach(b=>b.addEventListener("click",()=>setView(b.dataset.view)));
   document.querySelectorAll("[data-go-view]").forEach(b=>b.addEventListener("click",()=>setView(b.dataset.goView)));
   $("refresh-all").addEventListener("click",()=>setView(document.querySelector(".nav-item.active")?.dataset.view||"dashboard"));
-  $("refresh-quality").addEventListener("click",loadQuality);$("export-arabic-names").addEventListener("click",exportArabicNames);
+  $("refresh-quality").addEventListener("click",loadQuality);$("export-arabic-names").addEventListener("click",exportArabicNames);\n  $("database-search").addEventListener("input",()=>{clearTimeout(drugSearchTimer);drugSearchTimer=setTimeout(()=>{databasePage=0;loadDatabase()},250)});\n  $("database-save-all").addEventListener("click",saveDatabase);\n  $("database-prev").addEventListener("click",()=>{if(databasePage>0){databasePage--;loadDatabase()}});\n  $("database-next").addEventListener("click",()=>{if(databaseHasMore){databasePage++;loadDatabase()}});
   $("add-drug").addEventListener("click",resetDrug);$("add-drug-2").addEventListener("click",resetDrug);
   $("drug-form").addEventListener("submit",saveDrug);$("ingredient-form").addEventListener("submit",saveIngredient);
   $("drug-prev").addEventListener("click",()=>{if(drugPage>0){drugPage--;loadDrugs()}});
