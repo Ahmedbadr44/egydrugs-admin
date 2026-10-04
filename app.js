@@ -128,7 +128,7 @@ async function loadDrugs(){
 }
 async function loadDatabase(){
   const term=$("database-search").value.trim(),from=databasePage*100;
-  let q=client.from("drugs").select("id,commercial_name_en,commercial_name_ar,scientific_name,manufacturer,drug_class,route,price_egp").order("id",{ascending:true}).range(from,from+100);
+  let q=client.from("drugs").select("id,commercial_name_en,commercial_name_ar,scientific_name,manufacturer,drug_class,route").order("id",{ascending:true}).range(from,from+100);
   if(term){const p="%"+term+"%";q=q.or("commercial_name_en.ilike."+p+",commercial_name_ar.ilike."+p+",scientific_name.ilike."+p+",manufacturer.ilike."+p+",drug_class.ilike."+p);}
   const r=await q;
   if(r.error){say("تعذر تحميل قاعدة البيانات: "+r.error.message,true);return}
