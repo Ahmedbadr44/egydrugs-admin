@@ -128,7 +128,7 @@ async function loadDrugs(){
 }
 async function loadDatabase(){
   const term=$("database-search").value.trim(),from=databasePage*100;
-  let q=client.from("drugs").select("id,commercial_name_en,commercial_name_ar,scientific_name,manufacturer,drug_class,route,price_egp").order("id",{ascending:true}).range(from,from+100);
+  let q=client.from("drugs").select("id,commercial_name_en,commercial_name_ar,scientific_name,manufacturer,drug_class,route,price_egp").order("id",{ascending:true}).range(from,from+99);
   if(term){
     const p="%"+term+"%";
     q=q.or("commercial_name_en.ilike."+p+",commercial_name_ar.ilike."+p+",scientific_name.ilike."+p+",manufacturer.ilike."+p+",drug_class.ilike."+p);
@@ -160,7 +160,7 @@ async function loadDatabase(){
       }else if(field==="route"){
         const select=document.createElement("select");
         select.dataset.field=field;
-        select.innerHTML='<option value="">اختر الشكل</option>'+routeOptions.map(v=>'<option value="'+html(v)+'">'+html(v)+'</option>').join("");
+        select.innerHTML='<option value="">اختر الشكل</option>';
         select.value=d[field]||"";
         td.appendChild(select);
         return;
@@ -211,12 +211,14 @@ async function loadIngredients(){
   $("ingredient-result-note").textContent=term?"نتائج البحث عن \""+term+"\"":"المواد مرتبة حسب عدد المنتجات";icons();
 }
 async function openDrug(id){
+  try{
   const r=await client.from("drugs").select("id,commercial_name_en,commercial_name_ar,scientific_name,manufacturer,drug_class,route,price_egp").eq("id",id).single();
   if(r.error){say("تعذر تحميل الدواء: "+r.error.message,true);return}
   const d=r.data;$("drug-dialog-title").textContent="تعديل دواء";
   $("drug-id").value=d.id;$("name-en").value=d.commercial_name_en||"";$("name-ar").value=d.commercial_name_ar||"";
   $("scientific-name").value=d.scientific_name||"";$("manufacturer").value=d.manufacturer||"";$("drug-class").value=d.drug_class||"";
   fillRouteSelect($("route"),d.route||"");$("price").value=d.price_egp??"";$("drug-error").textContent="";$("drug-dialog").showModal();
+  }catch(e){say("تعذر فتح الدواء: "+e.message,true)}
 }
 function resetDrug(){
   $("drug-dialog-title").textContent="إضافة دواء";$("drug-id").value="";
@@ -310,7 +312,16 @@ function attach(){
   $("drug-search").addEventListener("input",()=>{clearTimeout(drugSearchTimer);drugSearchTimer=setTimeout(()=>{drugPage=0;loadDrugs()},250)});
   $("sign-out").addEventListener("click",async()=>{await client.auth.signOut();$("app").hidden=true;$("login-view").hidden=false});
   document.querySelectorAll("[data-close]").forEach(b=>b.addEventListener("click",()=>$(b.dataset.close).close()));
-  $("drugs-body").addEventListener("click",e=>{const b=e.target.closest("[data-action]");if(!b)return;if(b.dataset.action==="edit-drug")openDrug(b.dataset.id);if(b.dataset.action==="delete-drug")deleteDrug(b.dataset.id);if(b.dataset.action==="save-arabic"){const input=$("drugs-body").querySelector(`.arabic-inline[data-id="${b.dataset.id}"]`);if(input)saveArabicInline(b.dataset.id,input)}});
+  document.addEventListener("click",e=>{
+    const b=e.target.closest("[data-action]");
+    if(!b)return;
+    if(b.dataset.action==="edit-drug")openDrug(b.dataset.id);
+    if(b.dataset.action==="delete-drug")deleteDrug(b.dataset.id);
+    if(b.dataset.action==="save-arabic"){
+      const input=document.querySelector(`.arabic-inline[data-id="${b.dataset.id}"]`);
+      if(input)saveArabicInline(b.dataset.id,input);
+    }
+  });
   $("login-form").addEventListener("submit",async e=>{e.preventDefault();$("login-error").textContent="";const r=await client.auth.signInWithPassword({email:$("login-email").value.trim(),password:$("login-password").value});if(r.error){$("login-error").textContent="تعذر تسجيل الدخول. راجع البريد وكلمة المرور.";return}await openApp(r.data.session)})
 }
 async function start(){client=window.supabase.createClient(CONFIG.url,CONFIG.key);attach();icons();const r=await client.auth.getSession();if(r.error){$("login-error").textContent="تعذر استعادة الجلسة.";return}if(r.data.session)await openApp(r.data.session)}
