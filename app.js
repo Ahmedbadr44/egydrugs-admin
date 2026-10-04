@@ -1,6 +1,7 @@
 const CONFIG={url:"https://lfxdgtbsmomafyaolndh.supabase.co",key:"sb_publishable_A9K53JorCDERk7MtJG5wiw_z_Jm0bX0"};
 const PAGE_SIZE=40,INGREDIENT_PAGE_SIZE=60;
-let client,drugPage=0,ingredientPage=0,drugHasMore=false,ingredientHasMore=false,drugSearchTimer,ingredientSearchTimer,missingArabicOnly=false,databasePage=0,databaseHasMore=false,databaseRows=[];\n
+let client,drugPage=0,ingredientPage=0,drugHasMore=false,ingredientHasMore=false,drugSearchTimer,ingredientSearchTimer,missingArabicOnly=false,databasePage=0,databaseHasMore=false,databaseRows=[];
+
 const $=id=>document.getElementById(id),toast=$("toast");
 
 function icons(){window.lucide?.createIcons()}
