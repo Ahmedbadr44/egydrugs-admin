@@ -137,18 +137,33 @@ async function loadDatabase(){
   if(r.error){say("تعذر تحميل قاعدة البيانات: "+r.error.message,true);return}
   databaseHasMore=r.data.length>100;
   databaseRows=r.data.slice(0,100);
-  $("database-body").innerHTML=databaseRows.map(d=>
-    "<tr data-id=\""+d.id+"\">"+
-    "<td class=\"db-id\">"+d.id+"</td>"+
-    "<td><input data-field=\"commercial_name_en\" value=\""+html(d.commercial_name_en||"")+""></td>"+
-    "<td><input data-field=\"commercial_name_ar\" value=\""+html(d.commercial_name_ar||"")+""></td>"+
-    "<td><input data-field=\"scientific_name\" value=\""+html(d.scientific_name||"")+""></td>"+
-    "<td><input data-field=\"manufacturer\" value=\""+html(d.manufacturer||"")+""></td>"+
-    "<td><input data-field=\"drug_class\" value=\""+html(d.drug_class||"")+""></td>"+
-    "<td><input data-field=\"route\" value=\""+html(d.route||"")+""></td>"+
-    "<td><input data-field=\"price_egp\" type=\"number\" min=\"0\" step=\"0.01\" value=\""+(d.price_egp??"")+""></td>"+
-    "</tr>"
-  ).join("");
+  const body=$("database-body");
+  body.innerHTML="";
+  const fields=["commercial_name_en","commercial_name_ar","scientific_name","manufacturer","drug_class","route","price_egp"];
+  databaseRows.forEach(d=>{
+    const tr=document.createElement("tr");
+    tr.dataset.id=d.id;
+    const idCell=document.createElement("td");
+    idCell.className="db-id";
+    idCell.textContent=d.id;
+    tr.appendChild(idCell);
+    fields.forEach(field=>{
+      const td=document.createElement("td");
+      const input=document.createElement("input");
+      input.dataset.field=field;
+      if(field==="price_egp"){
+        input.type="number";
+        input.min="0";
+        input.step="0.01";
+        input.value=d[field]??"";
+      }else{
+        input.value=d[field]||"";
+      }
+      td.appendChild(input);
+      tr.appendChild(td);
+    });
+    body.appendChild(tr);
+  });
   $("database-page").textContent="صفحة "+(databasePage+1);
   $("database-prev").disabled=databasePage===0;
   $("database-next").disabled=!databaseHasMore;
