@@ -250,7 +250,10 @@ function attach(){
   document.querySelectorAll("[data-go-view]").forEach(b=>b.addEventListener("click",()=>setView(b.dataset.goView)));
   $("refresh-all").addEventListener("click",()=>setView(document.querySelector(".nav-item.active")?.dataset.view||"dashboard"));
   $("refresh-quality").addEventListener("click",loadQuality);$("export-arabic-names").addEventListener("click",exportArabicNames);
-  $("database-search").addEventListener("input",()=>{clearTimeout(drugSearchTimer);drugSearchTimer=setTimeout(()=>{databasePage=0;loadDatabase()},250)});\n  $("database-save-all").addEventListener("click",saveDatabase);\n  $("database-prev").addEventListener("click",()=>{if(databasePage>0){databasePage--;loadDatabase()}});\n  $("database-next").addEventListener("click",()=>{if(databaseHasMore){databasePage++;loadDatabase()}});
+  $("database-search").addEventListener("input",()=>{clearTimeout(drugSearchTimer);drugSearchTimer=setTimeout(()=>{databasePage=0;loadDatabase()},250)});
+  $("database-save-all").addEventListener("click",saveDatabase);
+  $("database-prev").addEventListener("click",()=>{if(databasePage>0){databasePage--;loadDatabase()}});
+  $("database-next").addEventListener("click",()=>{if(databaseHasMore){databasePage++;loadDatabase()}});
   $("add-drug").addEventListener("click",resetDrug);$("add-drug-2").addEventListener("click",resetDrug);
   $("drug-form").addEventListener("submit",saveDrug);$("ingredient-form").addEventListener("submit",saveIngredient);
   $("drug-prev").addEventListener("click",()=>{if(drugPage>0){drugPage--;loadDrugs()}});
