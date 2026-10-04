@@ -201,16 +201,16 @@ async function loadIngredients(){
   $("ingredient-result-note").textContent=term?"نتائج البحث عن \""+term+"\"":"المواد مرتبة حسب عدد المنتجات";icons();
 }
 async function openDrug(id){
-  const r=await client.from("drugs").select("id,commercial_name_en,commercial_name_ar,scientific_name,manufacturer,drug_class,route,price_egp,dosage").eq("id",id).single();
+  const r=await client.from("drugs").select("id,commercial_name_en,commercial_name_ar,scientific_name,manufacturer,drug_class,route,price_egp").eq("id",id).single();
   if(r.error){say("تعذر تحميل الدواء: "+r.error.message,true);return}
   const d=r.data;$("drug-dialog-title").textContent="تعديل دواء";
   $("drug-id").value=d.id;$("name-en").value=d.commercial_name_en||"";$("name-ar").value=d.commercial_name_ar||"";
   $("scientific-name").value=d.scientific_name||"";$("manufacturer").value=d.manufacturer||"";$("drug-class").value=d.drug_class||"";
-  $("route").value=d.route||"";$("price").value=d.price_egp??"";$("dosage").value=d.dosage||"";$("drug-error").textContent="";$("drug-dialog").showModal();
+  $("route").value=d.route||"";$("price").value=d.price_egp??"";$("drug-error").textContent="";$("drug-dialog").showModal();
 }
 function resetDrug(){
   $("drug-dialog-title").textContent="إضافة دواء";$("drug-id").value="";
-  ["name-en","name-ar","scientific-name","manufacturer","drug-class","route","price","dosage"].forEach(id=>$(id).value="");
+  ["name-en","name-ar","scientific-name","manufacturer","drug-class","route","price"].forEach(id=>$(id).value="");
   $("drug-error").textContent="";$("drug-dialog").showModal();
 }
 async function saveDrug(e){
@@ -220,7 +220,7 @@ async function saveDrug(e){
   const p={
     commercial_name_en:$("name-en").value.trim(),commercial_name_ar:$("name-ar").value.trim(),
     scientific_name:$("scientific-name").value.trim(),manufacturer:$("manufacturer").value.trim(),
-    drug_class:$("drug-class").value.trim(),route:$("route").value.trim(),price_egp:price,dosage:$("dosage").value.trim()
+    drug_class:$("drug-class").value.trim(),route:$("route").value.trim(),price_egp:price
   };
   const id=$("drug-id").value,r=id?await client.from("drugs").update(p).eq("id",id):await client.from("drugs").insert(p);
   if(r.error){$("drug-error").textContent="تعذر الحفظ: "+r.error.message;return}
