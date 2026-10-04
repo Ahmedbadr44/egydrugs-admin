@@ -49,7 +49,6 @@ function setView(view){
     database:["قاعدة البيانات","تعديل بيانات الأدوية مباشرة في جدول شبيه بـ Excel."]
   }[view];
   $("page-title").textContent=meta[0];$("page-subtitle").textContent=meta[1];
-  if(view==="dashboard")loadDashboard();
   if(view==="drugs")loadDrugs();
   if(view==="ingredients")loadIngredients();
   if(view==="quality")loadQuality();
