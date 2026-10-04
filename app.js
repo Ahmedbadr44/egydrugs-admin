@@ -1,6 +1,6 @@
 const CONFIG={url:"https://lfxdgtbsmomafyaolndh.supabase.co",key:"sb_publishable_A9K53JorCDERk7MtJG5wiw_z_Jm0bX0"};
 const PAGE_SIZE=40,INGREDIENT_PAGE_SIZE=60;
-let client,drugPage=0,ingredientPage=0,drugHasMore=false,ingredientHasMore=false,drugSearchTimer,ingredientSearchTimer,missingArabicOnly=false,databasePage=0,databaseHasMore=false,databaseRows=[];\nlet manufacturerOptions=[],drugClassOptions=[],routeOptions=[];
+let client,drugPage=0,ingredientPage=0,drugHasMore=false,ingredientHasMore=false,drugSearchTimer,ingredientSearchTimer,missingArabicOnly=false,databasePage=0,databaseHasMore=false,databaseRows=[];\n
 const $=id=>document.getElementById(id),toast=$("toast");
 
 function icons(){window.lucide?.createIcons()}
@@ -13,47 +13,6 @@ function html(v){
 }
 function lines(v){return String(v||"").split("\n").map(x=>x.trim()).filter(Boolean)}
 function num(v){return new Intl.NumberFormat("ar-EG").format(Number(v||0))}
-async function fetchDistinctColumn(column){
-  const values=new Set();
-  let from=0;
-  while(true){
-    const r=await client.from("drugs").select(column).not(column,"is",null).order(column,{ascending:true}).range(from,from+999);
-    if(r.error)throw r.error;
-    for(const row of (r.data||[])){
-      const value=String(row[column]??"").trim();
-      if(value)values.add(value);
-    }
-    if((r.data||[]).length<1000)break;
-    from+=1000;
-  }
-  return [...values];
-}
-function fillDatalist(id,values){
-  const list=$(id);
-  if(!list)return;
-  list.innerHTML=values.map(v=>"<option value=\""+html(v)+"\"></option>").join("");
-}
-function fillRouteSelect(select,value=""){
-  if(!select)return;
-  select.innerHTML='<option value="">اختر الشكل الدوائي</option>'+routeOptions.map(v=>'<option value="'+html(v)+'">'+html(v)+'</option>').join("");
-  select.value=value||"";
-}
-async function loadLookupOptions(){
-  try{
-    [manufacturerOptions,drugClassOptions,routeOptions]=await Promise.all([
-      fetchDistinctColumn("manufacturer"),
-      fetchDistinctColumn("drug_class"),
-      fetchDistinctColumn("route")
-    ]);
-    fillDatalist("manufacturer-options",manufacturerOptions);
-    fillDatalist("drug-class-options",drugClassOptions);
-    fillDatalist("route-options",routeOptions);
-    fillRouteSelect($("route"));
-  }catch(e){
-    console.error("Lookup options failed:",e);
-    say("تعذر تحميل القوائم المنسدلة: "+e.message,true);
-  }
-}
 async function isAdmin(userId){
   const r=await client.from("drug_admins").select("user_id").eq("user_id",userId).maybeSingle();
   if(r.error) return {ok:false,error:r.error};
@@ -77,7 +36,6 @@ async function openApp(session){
   }
   $("account-email").textContent=session.user.email||"";
   $("login-view").hidden=true;$("app").hidden=false;setView("drugs");
-  loadLookupOptions();
 }
 function setView(view){
   document.querySelectorAll(".nav-item[data-view]").forEach(b=>b.classList.toggle("active",b.dataset.view===view));
@@ -207,8 +165,8 @@ async function loadDatabase(){
         return;
       }else{
         input.value=d[field]||"";
-        if(field==="manufacturer")input.setAttribute("list","manufacturer-options");
-        if(field==="drug_class")input.setAttribute("list","drug-class-options");
+        if(field==="manufacturer")
+        if(field==="drug_class")
         input.autocomplete="off";
         td.appendChild(input);
       }
