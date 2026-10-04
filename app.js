@@ -35,7 +35,7 @@ async function openApp(session){
     $("login-view").hidden=false;$("app").hidden=true;return;
   }
   $("account-email").textContent=session.user.email||"";
-  $("login-view").hidden=true;$("app").hidden=false;await loadDashboard();
+  $("login-view").hidden=true;$("app").hidden=false;setView("drugs");
 }
 function setView(view){
   document.querySelectorAll(".nav-item[data-view]").forEach(b=>b.classList.toggle("active",b.dataset.view===view));
