@@ -13,6 +13,7 @@ function html(v){
   return String(v??"").replace(/[&<>'"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",'"':"&quot;"}[c]));
 }
 function lines(v){return String(v||"").split("\n").map(x=>x.trim()).filter(Boolean)}
+function fillRouteSelect(select,value=""){if(!select)return;select.innerHTML='<option value="">اختر الشكل الدوائي</option>';select.value=value||"";}
 function num(v){return new Intl.NumberFormat("ar-EG").format(Number(v||0))}
 async function isAdmin(userId){
   const r=await client.from("drug_admins").select("user_id").eq("user_id",userId).maybeSingle();
