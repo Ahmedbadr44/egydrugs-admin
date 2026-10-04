@@ -211,7 +211,10 @@ function attach(){
   $("sign-out").addEventListener("click",async()=>{await client.auth.signOut();$("app").hidden=true;$("login-view").hidden=false});
   document.querySelectorAll("[data-close]").forEach(b=>b.addEventListener("click",()=>$(b.dataset.close).close()));
   $("drugs-body").addEventListener("click",e=>{const b=e.target.closest("[data-action]");if(!b)return;if(b.dataset.action==="edit-drug")openDrug(b.dataset.id);if(b.dataset.action==="delete-drug")deleteDrug(b.dataset.id)});
-  $("ingredients-body").addEventListener("click",e=>{const b=e.target.closest("[data-action='edit-ingredient']");if(b)openIngredient(b.dataset.key)});
+  $("ingredients-body").addEventListener("click",e=>{
+    const b=e.target.closest("button[data-action='edit-ingredient']");
+    if(b){e.preventDefault();openIngredient(b.dataset.key);}
+  });
   $("login-form").addEventListener("submit",async e=>{e.preventDefault();$("login-error").textContent="";const r=await client.auth.signInWithPassword({email:$("login-email").value.trim(),password:$("login-password").value});if(r.error){$("login-error").textContent="تعذر تسجيل الدخول. راجع البريد وكلمة المرور.";return}await openApp(r.data.session)})
 }
 async function start(){client=window.supabase.createClient(CONFIG.url,CONFIG.key);attach();icons();const r=await client.auth.getSession();if(r.error){$("login-error").textContent="تعذر استعادة الجلسة.";return}if(r.data.session)await openApp(r.data.session)}
