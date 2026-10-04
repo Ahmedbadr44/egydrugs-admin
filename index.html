@@ -1,89 +1,68 @@
 <!doctype html>
 <html lang="ar" dir="rtl">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#006c62" />
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net https://unpkg.com; style-src 'self'; connect-src 'self' https://*.supabase.co wss://*.supabase.co http://localhost:* http://127.0.0.1:* ws://localhost:* ws://127.0.0.1:*; img-src 'self' data:; object-src 'none'; base-uri 'self'; form-action 'self'" />
-    <title>إدارة دليل الأدوية</title>
-    <link rel="stylesheet" href="styles.css" />
-  </head>
-  <body>
-    <main id="app" class="app-shell" hidden>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0b7468">
+  <title>إدارة دليل الأدوية</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <section id="login-view" class="auth-shell">
+    <form id="login-form" class="auth-card">
+      <div class="brand-mark"><i data-lucide="pill"></i></div>
+      <div><h1>إدارة دليل الأدوية</h1><p>لوحة التحكم الخاصة بإدارة بيانات Egydrugs.</p></div>
+      <label>البريد الإلكتروني<input id="login-email" type="email" required autocomplete="email"></label>
+      <label>كلمة المرور<input id="login-password" type="password" required autocomplete="current-password"></label>
+      <p id="login-error" class="form-error"></p>
+      <button class="primary-button wide" type="submit"><i data-lucide="log-in"></i> تسجيل الدخول</button>
+    </form>
+  </section>
+  <div id="app" class="app" hidden>
+    <aside class="sidebar">
+      <div class="sidebar-brand"><span class="brand-mark small"><i data-lucide="pill"></i></span><div><strong>Egydrugs</strong><small>Admin</small></div></div>
+      <nav class="nav">
+        <button class="nav-item active" data-view="dashboard"><i data-lucide="layout-dashboard"></i><span>الرئيسية</span></button>
+        <button class="nav-item" data-view="drugs"><i data-lucide="database"></i><span>الأدوية</span></button>
+        <button class="nav-item" data-view="ingredients"><i data-lucide="flask-conical"></i><span>المواد الفعالة</span></button>
+        <button class="nav-item" data-view="quality"><i data-lucide="shield-check"></i><span>جودة البيانات</span></button>
+      </nav>
+      <div class="sidebar-bottom">
+        <div class="account-box"><span class="status-dot"></span><div><small>الحساب الحالي</small><strong id="account-email"></strong></div></div>
+        <button id="sign-out" class="nav-item danger-item"><i data-lucide="log-out"></i><span>تسجيل الخروج</span></button>
+      </div>
+    </aside>
+    <main class="main">
       <header class="topbar">
-        <div class="brand">
-          <span class="brand-mark" aria-hidden="true"><i data-lucide="cross"></i></span>
-          <div><h1>دليل الأدوية</h1><p>إدارة قائمة الأدوية</p></div>
-        </div>
-        <div class="account-actions">
-          <span id="account-email" class="account-email"></span>
-          <button id="sign-out" class="icon-button" type="button" title="تسجيل الخروج" aria-label="تسجيل الخروج"><i data-lucide="log-out"></i></button>
-        </div>
+        <div><h2 id="page-title">الرئيسية</h2><p id="page-subtitle">نظرة سريعة على قاعدة بيانات الأدوية.</p></div>
+        <div class="top-actions"><button id="refresh-all" class="icon-button" title="تحديث"><i data-lucide="refresh-cw"></i></button><button id="add-drug" class="primary-button"><i data-lucide="plus"></i> إضافة دواء</button></div>
       </header>
-      <section class="workspace" aria-label="الأدوية">
-        <div class="toolbar">
-          <label class="search-field"><i data-lucide="search" aria-hidden="true"></i><input id="search" type="search" placeholder="ابحث بالاسم أو المادة الفعالة" autocomplete="off" /></label>
-          <button id="add-drug" class="primary-button" type="button"><i data-lucide="plus" aria-hidden="true"></i>إضافة دواء</button>
+      <section id="view-dashboard" class="view active-view">
+        <div class="hero-card"><div><span class="eyebrow">لوحة الإدارة</span><h3>إدارة البيانات من مكان واحد</h3><p>الأدوية، المواد الفعالة، والمعلومات الطبية الأساسية مع أدوات لمراجعة جودة البيانات.</p></div><div class="hero-icon"><i data-lucide="activity"></i></div></div>
+        <div id="stats-grid" class="stats-grid"></div>
+        <div class="section-grid">
+          <section class="panel"><div class="panel-heading"><div><h3>أهم النواقص</h3><p>أمور تستحق المراجعة أولًا.</p></div></div><div id="quality-summary" class="quality-list"></div></section>
+          <section class="panel"><div class="panel-heading"><div><h3>أهم المواد الفعالة</h3><p>أكثر المواد ظهورًا في قاعدة البيانات.</p></div><button class="text-link" data-go-view="ingredients">عرض الكل</button></div><div id="top-ingredients" class="mini-list"></div></section>
         </div>
-        <p id="notice" class="notice" role="status" aria-live="polite"></p>
-        <div class="table-wrap">
-          <table>
-            <thead><tr><th>الدواء</th><th>المادة الفعالة</th><th>الشركة</th><th>السعر</th><th><span class="sr-only">إجراءات</span></th></tr></thead>
-            <tbody id="drugs-body"></tbody>
-          </table>
-          <div id="empty-state" class="empty-state" hidden><i data-lucide="search-x" aria-hidden="true"></i><p>لا توجد نتائج مطابقة.</p></div>
-        </div>
-        <nav class="pagination" aria-label="صفحات الأدوية">
-          <button id="next-page" class="secondary-button" type="button">التالي <i data-lucide="arrow-left" aria-hidden="true"></i></button>
-          <span id="page-label"></span>
-          <button id="previous-page" class="secondary-button" type="button"><i data-lucide="arrow-right" aria-hidden="true"></i> السابق</button>
-        </nav>
       </section>
+      <section id="view-drugs" class="view">
+        <div class="toolbar-panel"><div class="search-box"><i data-lucide="search"></i><input id="drug-search" placeholder="ابحث بالاسم التجاري أو المادة الفعالة أو الاسم العربي..." autocomplete="off"></div><div class="toolbar-actions"><button id="clear-drug-search" class="secondary-button">مسح</button><button id="add-drug-2" class="primary-button"><i data-lucide="plus"></i> إضافة دواء</button></div></div>
+        <div class="panel table-panel"><div class="panel-heading"><div><h3>قائمة الأدوية</h3><p id="drug-result-note">جاري التحميل...</p></div></div><div class="table-wrap"><table><thead><tr><th>الدواء</th><th>المادة الفعالة</th><th>الشركة</th><th>السعر</th><th>إجراءات</th></tr></thead><tbody id="drugs-body"></tbody></table><div id="drugs-empty" class="empty-state" hidden><i data-lucide="search-x"></i><p>لا توجد نتائج.</p></div></div><div class="pagination"><button id="drug-prev" class="secondary-button">السابق</button><span id="drug-page">صفحة 1</span><button id="drug-next" class="secondary-button">التالي</button></div></div>
+      </section>
+      <section id="view-ingredients" class="view">
+        <div class="toolbar-panel"><div class="search-box"><i data-lucide="search"></i><input id="ingredient-search" placeholder="ابحث عن مادة فعالة..." autocomplete="off"></div><p class="toolbar-note">المعلومات هنا مركزية: أي تعديل للمادة الفعالة يظهر لكل الأدوية التي تحتوي عليها.</p></div>
+        <div class="panel table-panel"><div class="panel-heading"><div><h3>المواد الفعالة</h3><p id="ingredient-result-note">جاري التحميل...</p></div></div><div class="table-wrap"><table><thead><tr><th>المادة الفعالة</th><th>عدد المنتجات</th><th>الحالة الطبية</th><th>إجراء</th></tr></thead><tbody id="ingredients-body"></tbody></table><div id="ingredients-empty" class="empty-state" hidden><i data-lucide="flask-conical"></i><p>لا توجد نتائج.</p></div></div><div class="pagination"><button id="ingredient-prev" class="secondary-button">السابق</button><span id="ingredient-page">صفحة 1</span><button id="ingredient-next" class="secondary-button">التالي</button></div></div>
+      </section>
+      <section id="view-quality" class="view"><div class="stats-grid" id="quality-stats"></div><section class="panel"><div class="panel-heading"><div><h3>مراجعة جودة البيانات</h3><p>الأرقام تتحدث مباشرة من قاعدة البيانات.</p></div><button id="refresh-quality" class="secondary-button"><i data-lucide="refresh-cw"></i> تحديث</button></div><div id="quality-table" class="quality-table"></div></section></section>
     </main>
-
-    <section id="login-view" class="auth-shell" hidden>
-      <form id="login-form" class="auth-panel">
-        <div class="auth-mark" aria-hidden="true"><i data-lucide="cross"></i></div>
-        <h1>إدارة دليل الأدوية</h1><p>سجّل الدخول بحساب المشرف.</p>
-        <label>البريد الإلكتروني<input id="login-email" type="email" required autocomplete="email" /></label>
-        <label>كلمة المرور<input id="login-password" type="password" required autocomplete="current-password" /></label>
-        <p id="login-error" class="form-error" role="alert"></p>
-        <button class="primary-button wide-button" type="submit">تسجيل الدخول</button>
-        <button id="change-config" class="text-button" type="button">إعداد الاتصال</button>
-      </form>
-    </section>
-
-    <section id="setup-view" class="auth-shell" hidden>
-      <form id="setup-form" class="auth-panel">
-        <div class="auth-mark" aria-hidden="true"><i data-lucide="settings"></i></div>
-        <h1>إعداد الاتصال</h1><p>أدخل بيانات الاتصال العامة لمشروع Supabase مرة واحدة على هذا الجهاز.</p>
-        <label>Project URL<input id="project-url" type="url" required placeholder="https://your-project.supabase.co" /></label>
-        <label>Publishable key<input id="publishable-key" type="text" required autocomplete="off" /></label>
-        <p id="setup-error" class="form-error" role="alert"></p>
-        <button class="primary-button wide-button" type="submit">حفظ والمتابعة</button>
-      </form>
-    </section>
-
-    <dialog id="drug-dialog" class="drug-dialog">
-      <form id="drug-form" method="dialog">
-        <header class="dialog-header"><h2 id="dialog-title">إضافة دواء</h2><button id="close-dialog" class="icon-button" type="button" title="إغلاق" aria-label="إغلاق"><i data-lucide="x"></i></button></header>
-        <input id="drug-id" type="hidden" />
-        <div class="form-grid">
-          <label>الاسم بالإنجليزية<input id="name-en" required /></label>
-          <label>الاسم بالعربية<input id="name-ar" /></label>
-          <label class="full-width">المادة الفعالة<input id="scientific-name" /></label>
-          <label>الشركة<input id="manufacturer" /></label>
-          <label>التصنيف الدوائي<input id="drug-class" /></label>
-          <label>الشكل الدوائي<input id="route" /></label>
-          <label>السعر (ج.م)<input id="price" type="number" min="0" step="0.01" /></label>
-          <label class="full-width">الجرعة<input id="dosage" /></label>
-        </div>
-        <p id="dialog-error" class="form-error" role="alert"></p>
-        <footer class="dialog-actions"><button id="cancel-dialog" class="secondary-button" type="button">إلغاء</button><button class="primary-button" type="submit">حفظ</button></footer>
-      </form>
-    </dialog>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <script src="app.js"></script>
-  </body>
+  </div>
+  <dialog id="drug-dialog" class="modal"><form id="drug-form"><header class="modal-header"><div><h3 id="drug-dialog-title">إضافة دواء</h3><p>تعديل بيانات المنتج التجاري فقط.</p></div><button type="button" class="icon-button" data-close="drug-dialog"><i data-lucide="x"></i></button></header><input id="drug-id" type="hidden"><div class="form-grid">
+    <label>الاسم بالإنجليزية<input id="name-en" required></label><label>الاسم بالعربية<input id="name-ar"></label><label class="full">المادة الفعالة<input id="scientific-name"></label><label>الشركة<input id="manufacturer"></label><label>التصنيف الدوائي<input id="drug-class"></label><label>الشكل الدوائي<input id="route"></label><label>السعر (ج.م)<input id="price" type="number" min="0" step="0.01"></label><label class="full">الجرعة<input id="dosage"></label>
+  </div><p id="drug-error" class="form-error"></p><footer class="modal-footer"><button type="button" class="secondary-button" data-close="drug-dialog">إلغاء</button><button class="primary-button" type="submit">حفظ</button></footer></form></dialog>
+  <dialog id="ingredient-dialog" class="modal wide-modal"><form id="ingredient-form"><header class="modal-header"><div><span class="eyebrow">معلومات مركزية</span><h3 id="ingredient-dialog-title">المادة الفعالة</h3><p id="ingredient-product-count"></p></div><button type="button" class="icon-button" data-close="ingredient-dialog"><i data-lucide="x"></i></button></header><input id="ingredient-key" type="hidden"><div class="form-grid">
+    <label class="full">اسم العرض<input id="ingredient-display-name" required></label><label class="full">الاستخدامات <small>كل استخدام في سطر.</small><textarea id="ingredient-uses" rows="7"></textarea></label><label class="full">الأعراض الجانبية المحتملة <small>كل عرض في سطر.</small><textarea id="ingredient-side-effects" rows="7"></textarea></label><label>رابط المصدر الطبي<input id="ingredient-source-url" type="url" placeholder="https://..."></label><label>اسم المصدر الطبي<input id="ingredient-source-name" placeholder="مثال: النشرة المعتمدة"></label>
+  </div><div class="central-note"><i data-lucide="info"></i><span>لن يتم تكرار نفس البيانات في كل منتج. المادة الفعالة هي المصدر المركزي للمعلومات المشتركة.</span></div><p id="ingredient-error" class="form-error"></p><footer class="modal-footer"><button type="button" class="secondary-button" data-close="ingredient-dialog">إلغاء</button><button class="primary-button" type="submit">حفظ المادة الفعالة</button></footer></form></dialog>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="https://unpkg.com/lucide@latest"></script><script src="app.js"></script>
+</body>
 </html>
