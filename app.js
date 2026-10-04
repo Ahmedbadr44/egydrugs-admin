@@ -186,7 +186,6 @@ async function saveDatabase(){
     return;
   }
   say("تم حفظ التعديلات بنجاح.");
-  await loadDashboard();
   await loadDatabase();
 }
 async function loadIngredients(){
@@ -223,7 +222,7 @@ async function saveDrug(e){
   };
   const id=$("drug-id").value,r=id?await client.from("drugs").update(p).eq("id",id):await client.from("drugs").insert(p);
   if(r.error){$("drug-error").textContent="تعذر الحفظ: "+r.error.message;return}
-  $("drug-dialog").close();say(id?"تم تعديل الدواء.":"تمت إضافة الدواء.");await loadDrugs();await loadDashboard();
+  $("drug-dialog").close();say(id?"تم تعديل الدواء.":"تمت إضافة الدواء.");await loadDrugs();
 }
 async function saveArabicInline(id,input){
   const value=input.value.trim();
@@ -233,14 +232,13 @@ async function saveArabicInline(id,input){
   if(r.error){say("تعذر حفظ الاسم العربي: "+r.error.message,true);return}
   say("تم حفظ الاسم العربي.");
   await loadDrugs();
-  await loadDashboard();
 }
 async function deleteDrug(id){
   const r=await client.from("drugs").select("commercial_name_en").eq("id",id).maybeSingle();
   if(!r.data||!confirm("حذف \""+r.data.commercial_name_en+"\" نهائيًا؟"))return;
   const x=await client.from("drugs").delete().eq("id",id);
   if(x.error){say("تعذر الحذف: "+x.error.message,true);return}
-  say("تم حذف الدواء.");await loadDrugs();await loadDashboard();
+  say("تم حذف الدواء.");await loadDrugs();
 }
 async function openIngredient(key){
   const r=await client.from("active_ingredient_medical_info").select("ingredient_key,display_name,uses,dosage,side_effects,contraindications,source_url,source_name").eq("ingredient_key",key).maybeSingle();
