@@ -207,12 +207,8 @@ async function openIngredient(key){
   const list=await client.rpc("list_active_ingredients",{p_search:key,p_limit:200,p_offset:0});
   const m=(list.data||[]).find(x=>x.ingredient_key===key);
   $("ingredient-dialog-title").textContent=r.data?.display_name||key;$("ingredient-key").value=key;
-  $("ingredient-display-name").value=r.data?.display_name||key;$("ingredient-uses").value=(r.data?.uses||[]).join("
-");$("ingredient-dosage").value=(r.data?.dosage||[]).join("
-");
-  $("ingredient-side-effects").value=(r.data?.side_effects||[]).join("
-");$("ingredient-contraindications").value=(r.data?.contraindications||[]).join("
-");$("ingredient-source-url").value=r.data?.source_url||"";
+  $("ingredient-display-name").value=r.data?.display_name||key;$("ingredient-uses").value=(r.data?.uses||[]).join("\n");$("ingredient-dosage").value=(r.data?.dosage||[]).join("\n");
+  $("ingredient-side-effects").value=(r.data?.side_effects||[]).join("\n");$("ingredient-contraindications").value=(r.data?.contraindications||[]).join("\n");$("ingredient-source-url").value=r.data?.source_url||"";
   $("ingredient-source-name").value=r.data?.source_name||"";$("ingredient-product-count").textContent=m?num(m.product_count)+" منتج يستخدم هذه المادة الفعالة":"";
   $("ingredient-error").textContent="";$("ingredient-dialog").showModal();
 }
