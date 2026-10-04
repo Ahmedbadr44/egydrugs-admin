@@ -141,7 +141,7 @@ async function loadDatabase(){
     "<td><input data-field=\"manufacturer\" value=\""+html(d.manufacturer||"")+"\"></td>"+
     "<td><input data-field=\"drug_class\" value=\""+html(d.drug_class||"")+"\"></td>"+
     "<td><input data-field=\"route\" value=\""+html(d.route||"")+"\"></td>"+
-    "<td><input data-field=\"price_egp\" type=\"number\" min=\"0\" step=\"0.01\" value=\""+(d.price_egp??"")+"\"></td>"+
+    "<td><input data-field=\"price_egp\" type=\"number\" min=\"0\" step=\"0.01\" value=\""+(d.price_egp??"")+""></td></tr>").join("");
   $("database-page").textContent="صفحة "+(databasePage+1);$("database-prev").disabled=databasePage===0;$("database-next").disabled=!databaseHasMore;icons();
 }
 async function saveDatabase(){
