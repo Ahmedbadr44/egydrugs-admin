@@ -11,8 +11,7 @@ function say(message,error=false){
 function html(v){
   return String(v??"").replace(/[&<>'"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",'"':"&quot;"}[c]));
 }
-function lines(v){return String(v||"").split("
-").map(x=>x.trim()).filter(Boolean)}
+function lines(v){return String(v||"").split("\n").map(x=>x.trim()).filter(Boolean)}
 function num(v){return new Intl.NumberFormat("ar-EG").format(Number(v||0))}
 async function isAdmin(userId){
   const r=await client.from("drug_admins").select("user_id").eq("user_id",userId).maybeSingle();
@@ -69,8 +68,7 @@ async function exportArabicNames(){
     const csv="\uFEFF"+[
       ["id","commercial_name_en","commercial_name_ar"].map(esc).join(","),
       ...rows.map(r=>[r.id,r.commercial_name_en,r.commercial_name_ar].map(esc).join(","))
-    ].join("\r
-");
+    ].join("\r\n");
     const a=document.createElement("a");
     a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv;charset=utf-8"}));
     a.download="egydrugs_arabic_names.csv";
