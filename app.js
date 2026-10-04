@@ -1,6 +1,6 @@
 const CONFIG={url:"https://lfxdgtbsmomafyaolndh.supabase.co",key:"sb_publishable_A9K53JorCDERk7MtJG5wiw_z_Jm0bX0"};
 const PAGE_SIZE=40,INGREDIENT_PAGE_SIZE=60;
-let client,drugPage=0,ingredientPage=0,drugHasMore=false,ingredientHasMore=false,drugSearchTimer,ingredientSearchTimer;
+let client,drugPage=0,ingredientPage=0,drugHasMore=false,ingredientHasMore=false,drugSearchTimer,ingredientSearchTimer,missingArabicOnly=false;
 const $=id=>document.getElementById(id),toast=$("toast");
 
 function icons(){window.lucide?.createIcons()}
@@ -102,11 +102,12 @@ async function loadDrugs(){
     const p="%"+term+"%";
     q=q.or("commercial_name_en.ilike."+p+",commercial_name_ar.ilike."+p+",scientific_name.ilike."+p);
   }
+  if(missingArabicOnly) q=q.is("commercial_name_ar",null);
   const r=await q;
   if(r.error){say("تعذر تحميل الأدوية: "+r.error.message,true);return}
   drugHasMore=r.data.length>PAGE_SIZE;
   const rows=r.data.slice(0,PAGE_SIZE);
-  $("drugs-body").innerHTML=rows.map(d=>'<tr><td class="medicine-name">'+html(d.commercial_name_en)+(d.commercial_name_ar?'<small>'+html(d.commercial_name_ar)+"</small>":"")+'</td><td>'+html(d.scientific_name||"-")+'</td><td>'+html(d.manufacturer||"-")+'</td><td class="price">'+(d.price_egp==null?"-":new Intl.NumberFormat("ar-EG",{maximumFractionDigits:2}).format(d.price_egp)+" ج.م")+'</td><td><div class="row-actions"><button class="icon-button" data-action="edit-drug" data-id="'+d.id+'" title="تعديل"><i data-lucide="pencil"></i></button><button class="icon-button delete" data-action="delete-drug" data-id="'+d.id+'" title="حذف"><i data-lucide="trash-2"></i></button></div></td></tr>').join("");
+  $("drugs-body").innerHTML=rows.map(d=>'<tr><td class="medicine-name">'+html(d.commercial_name_en)+(d.commercial_name_ar?'<small>'+html(d.commercial_name_ar)+"</small>":"")+'</td><td><div class="quick-arabic"><input class="arabic-inline" data-id="'+d.id+'" value="'+html(d.commercial_name_ar||"")+'" placeholder="اكتب الاسم العربي..."><button class="icon-button save-inline" data-action="save-arabic" data-id="'+d.id+'" title="حفظ الاسم العربي"><i data-lucide="check"></i></button></div></td><td>'+html(d.scientific_name||"-")+'</td><td>'+html(d.manufacturer||"-")+'</td><td class="price">'+(d.price_egp==null?"-":new Intl.NumberFormat("ar-EG",{maximumFractionDigits:2}).format(d.price_egp)+" ج.م")+'</td><td><div class="row-actions"><button class="icon-button" data-action="edit-drug" data-id="'+d.id+'" title="تعديل كامل"><i data-lucide="pencil"></i></button><button class="icon-button delete" data-action="delete-drug" data-id="'+d.id+'" title="حذف"><i data-lucide="trash-2"></i></button></div></td></tr>').join("");
   $("drugs-empty").hidden=rows.length>0;
   $("drug-page").textContent="صفحة "+(drugPage+1);$("drug-prev").disabled=drugPage===0;$("drug-next").disabled=!drugHasMore;
   $("drug-result-note").textContent=term?"نتائج البحث عن \""+term+"\"":"آخر الأدوية في القاعدة";icons();
@@ -147,7 +148,7 @@ async function saveDrug(e){
   if(r.error){$("drug-error").textContent="تعذر الحفظ: "+r.error.message;return}
   $("drug-dialog").close();say(id?"تم تعديل الدواء.":"تمت إضافة الدواء.");await loadDrugs();await loadDashboard();
 }
-async function deleteDrug(id){
+async function saveArabicInline(id,input){\n  const value=input.value.trim();\n  input.disabled=true;\n  const r=await client.from("drugs").update({commercial_name_ar:value||null}).eq("id",id);\n  input.disabled=false;\n  if(r.error){say("تعذر حفظ الاسم العربي: "+r.error.message,true);return}\n  say("تم حفظ الاسم العربي.");\n  await loadDrugs();\n  await loadDashboard();\n}\nasync function deleteDrug(id){
   const r=await client.from("drugs").select("commercial_name_en").eq("id",id).maybeSingle();
   if(!r.data||!confirm("حذف \""+r.data.commercial_name_en+"\" نهائيًا؟"))return;
   const x=await client.from("drugs").delete().eq("id",id);
@@ -205,12 +206,12 @@ function attach(){
   $("drug-next").addEventListener("click",()=>{if(drugHasMore){drugPage++;loadDrugs()}});
   $("ingredient-prev").addEventListener("click",()=>{if(ingredientPage>0){ingredientPage--;loadIngredients()}});
   $("ingredient-next").addEventListener("click",()=>{if(ingredientHasMore){ingredientPage++;loadIngredients()}});
-  $("clear-drug-search").addEventListener("click",()=>{$("drug-search").value="";drugPage=0;loadDrugs()});
+  $("clear-drug-search").addEventListener("click",()=>{$("drug-search").value="";$("missing-arabic-only").checked=false;missingArabicOnly=false;drugPage=0;loadDrugs()});\n  $("missing-arabic-only").addEventListener("change",e=>{missingArabicOnly=e.target.checked;drugPage=0;loadDrugs()});
   $("drug-search").addEventListener("input",()=>{clearTimeout(drugSearchTimer);drugSearchTimer=setTimeout(()=>{drugPage=0;loadDrugs()},250)});
   $("ingredient-search").addEventListener("input",()=>{clearTimeout(ingredientSearchTimer);ingredientSearchTimer=setTimeout(()=>{ingredientPage=0;loadIngredients()},250)});
   $("sign-out").addEventListener("click",async()=>{await client.auth.signOut();$("app").hidden=true;$("login-view").hidden=false});
   document.querySelectorAll("[data-close]").forEach(b=>b.addEventListener("click",()=>$(b.dataset.close).close()));
-  $("drugs-body").addEventListener("click",e=>{const b=e.target.closest("[data-action]");if(!b)return;if(b.dataset.action==="edit-drug")openDrug(b.dataset.id);if(b.dataset.action==="delete-drug")deleteDrug(b.dataset.id)});
+  $("drugs-body").addEventListener("click",e=>{const b=e.target.closest("[data-action]");if(!b)return;if(b.dataset.action==="edit-drug")openDrug(b.dataset.id);if(b.dataset.action==="delete-drug")deleteDrug(b.dataset.id);if(b.dataset.action==="save-arabic"){const input=$("drugs-body").querySelector(`.arabic-inline[data-id="${b.dataset.id}"]`);if(input)saveArabicInline(b.dataset.id,input)}});
   $("ingredients-body").addEventListener("click",e=>{
     const b=e.target.closest("button[data-action='edit-ingredient']");
     if(b){e.preventDefault();openIngredient(b.dataset.key);}
