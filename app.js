@@ -1,6 +1,6 @@
 const CONFIG={url:"https://lfxdgtbsmomafyaolndh.supabase.co",key:"sb_publishable_A9K53JorCDERk7MtJG5wiw_z_Jm0bX0"};
 const PAGE_SIZE=40,INGREDIENT_PAGE_SIZE=60;
-let client,drugPage=0,ingredientPage=0,drugHasMore=false,ingredientHasMore=false,drugSearchTimer,ingredientSearchTimer,missingArabicOnly=false,databasePage=0,databaseHasMore=false,databaseRows=[];
+let client,drugPage=0,ingredientPage=0,drugHasMore=false,ingredientHasMore=false,drugSearchTimer,ingredientSearchTimer,missingArabicOnly=false,databasePage=0,databaseHasMore=false,databaseRows=[];\nlet manufacturerOptions=[],drugClassOptions=[],routeOptions=[];
 const $=id=>document.getElementById(id),toast=$("toast");
 
 function icons(){window.lucide?.createIcons()}
@@ -13,6 +13,47 @@ function html(v){
 }
 function lines(v){return String(v||"").split("\n").map(x=>x.trim()).filter(Boolean)}
 function num(v){return new Intl.NumberFormat("ar-EG").format(Number(v||0))}
+async function fetchDistinctColumn(column){
+  const values=new Set();
+  let from=0;
+  while(true){
+    const r=await client.from("drugs").select(column).not(column,"is",null).order(column,{ascending:true}).range(from,from+999);
+    if(r.error)throw r.error;
+    for(const row of (r.data||[])){
+      const value=String(row[column]??"").trim();
+      if(value)values.add(value);
+    }
+    if((r.data||[]).length<1000)break;
+    from+=1000;
+  }
+  return [...values];
+}
+function fillDatalist(id,values){
+  const list=$(id);
+  if(!list)return;
+  list.innerHTML=values.map(v=>"<option value=\""+html(v)+"\"></option>").join("");
+}
+function fillRouteSelect(select,value=""){
+  if(!select)return;
+  select.innerHTML='<option value="">اختر الشكل الدوائي</option>'+routeOptions.map(v=>'<option value="'+html(v)+'">'+html(v)+'</option>').join("");
+  select.value=value||"";
+}
+async function loadLookupOptions(){
+  try{
+    [manufacturerOptions,drugClassOptions,routeOptions]=await Promise.all([
+      fetchDistinctColumn("manufacturer"),
+      fetchDistinctColumn("drug_class"),
+      fetchDistinctColumn("route")
+    ]);
+    fillDatalist("manufacturer-options",manufacturerOptions);
+    fillDatalist("drug-class-options",drugClassOptions);
+    fillDatalist("route-options",routeOptions);
+    fillRouteSelect($("route"));
+  }catch(e){
+    console.error("Lookup options failed:",e);
+    say("تعذر تحميل القوائم المنسدلة: "+e.message,true);
+  }
+}
 async function isAdmin(userId){
   const r=await client.from("drug_admins").select("user_id").eq("user_id",userId).maybeSingle();
   if(r.error) return {ok:false,error:r.error};
@@ -155,10 +196,21 @@ async function loadDatabase(){
         input.min="0";
         input.step="0.01";
         input.value=d[field]??"";
+        td.appendChild(input);
+      }else if(field==="route"){
+        const select=document.createElement("select");
+        select.dataset.field=field;
+        select.innerHTML='<option value="">اختر الشكل</option>'+routeOptions.map(v=>'<option value="'+html(v)+'">'+html(v)+'</option>').join("");
+        select.value=d[field]||"";
+        td.appendChild(select);
+        return;
       }else{
         input.value=d[field]||"";
+        if(field==="manufacturer")input.setAttribute("list","manufacturer-options");
+        if(field==="drug_class")input.setAttribute("list","drug-class-options");
+        input.autocomplete="off";
+        td.appendChild(input);
       }
-      td.appendChild(input);
       tr.appendChild(td);
     });
     body.appendChild(tr);
@@ -174,7 +226,7 @@ async function saveDatabase(){
   say("جاري حفظ التعديلات...");
   const results=await Promise.all(rows.map(async row=>{
     const id=row.dataset.id,p={};
-    row.querySelectorAll("input[data-field]").forEach(input=>{
+    row.querySelectorAll("[data-field]").forEach(input=>{
       const v=input.value.trim();
       p[input.dataset.field]=input.dataset.field==="price_egp"?(v===""?null:Number(v)):v;
     });
@@ -204,11 +256,11 @@ async function openDrug(id){
   const d=r.data;$("drug-dialog-title").textContent="تعديل دواء";
   $("drug-id").value=d.id;$("name-en").value=d.commercial_name_en||"";$("name-ar").value=d.commercial_name_ar||"";
   $("scientific-name").value=d.scientific_name||"";$("manufacturer").value=d.manufacturer||"";$("drug-class").value=d.drug_class||"";
-  $("route").value=d.route||"";$("price").value=d.price_egp??"";$("drug-error").textContent="";$("drug-dialog").showModal();
+  fillRouteSelect($("route"),d.route||"");$("price").value=d.price_egp??"";$("drug-error").textContent="";$("drug-dialog").showModal();
 }
 function resetDrug(){
   $("drug-dialog-title").textContent="إضافة دواء";$("drug-id").value="";
-  ["name-en","name-ar","scientific-name","manufacturer","drug-class","route","price"].forEach(id=>$(id).value="");
+  ["name-en","name-ar","scientific-name","manufacturer","drug-class","price"].forEach(id=>$(id).value="");fillRouteSelect($("route"));
   $("drug-error").textContent="";$("drug-dialog").showModal();
 }
 async function saveDrug(e){
@@ -301,5 +353,5 @@ function attach(){
   $("drugs-body").addEventListener("click",e=>{const b=e.target.closest("[data-action]");if(!b)return;if(b.dataset.action==="edit-drug")openDrug(b.dataset.id);if(b.dataset.action==="delete-drug")deleteDrug(b.dataset.id);if(b.dataset.action==="save-arabic"){const input=$("drugs-body").querySelector(`.arabic-inline[data-id="${b.dataset.id}"]`);if(input)saveArabicInline(b.dataset.id,input)}});
   $("login-form").addEventListener("submit",async e=>{e.preventDefault();$("login-error").textContent="";const r=await client.auth.signInWithPassword({email:$("login-email").value.trim(),password:$("login-password").value});if(r.error){$("login-error").textContent="تعذر تسجيل الدخول. راجع البريد وكلمة المرور.";return}await openApp(r.data.session)})
 }
-async function start(){client=window.supabase.createClient(CONFIG.url,CONFIG.key);attach();icons();const r=await client.auth.getSession();if(r.error){$("login-error").textContent="تعذر استعادة الجلسة.";return}if(r.data.session)await openApp(r.data.session)}
+async function start(){client=window.supabase.createClient(CONFIG.url,CONFIG.key);attach();icons();await loadLookupOptions();const r=await client.auth.getSession();if(r.error){$("login-error").textContent="تعذر استعادة الجلسة.";return}if(r.data.session)await openApp(r.data.session)}
 start();
