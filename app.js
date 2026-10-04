@@ -49,6 +49,32 @@ async function stats(){
 function statCard(icon,label,value,note){
   return '<div class="stat-card"><div class="stat-head"><span class="stat-label">'+html(label)+'</span><span class="stat-icon"><i data-lucide="'+icon+'"></i></span></div><div class="stat-value">'+num(value)+'</div><div class="stat-note">'+html(note)+'</div></div>';
 }
+async function exportArabicNames(){
+  try{
+    say("جاري تجهيز ملف الأسماء...");
+    const rows=[];
+    let from=0;
+    const size=1000;
+    while(true){
+      const r=await client.from("drugs").select("id,commercial_name_en,commercial_name_ar").order("id",{ascending:true}).range(from,from+size-1);
+      if(r.error)throw r.error;
+      rows.push(...(r.data||[]));
+      if((r.data||[]).length<size)break;
+      from+=size;
+    }
+    const esc=v=>'"'+String(v??"").replaceAll('"','""')+'"';
+    const csv="\uFEFF"+[
+      ["id","commercial_name_en","commercial_name_ar"].map(esc).join(","),
+      ...rows.map(r=>[r.id,r.commercial_name_en,r.commercial_name_ar].map(esc).join(","))
+    ].join("\r\n");
+    const a=document.createElement("a");
+    a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv;charset=utf-8"}));
+    a.download="egydrugs_arabic_names.csv";
+    document.body.appendChild(a);a.click();a.remove();
+    URL.revokeObjectURL(a.href);
+    say("تم تجهيز "+num(rows.length)+" اسم دواء.");
+  }catch(e){say("تعذر التصدير: "+e.message,true)}
+}
 async function loadDashboard(){
   try{
     const s=await stats();
@@ -172,7 +198,7 @@ function attach(){
   document.querySelectorAll(".nav-item[data-view]").forEach(b=>b.addEventListener("click",()=>setView(b.dataset.view)));
   document.querySelectorAll("[data-go-view]").forEach(b=>b.addEventListener("click",()=>setView(b.dataset.goView)));
   $("refresh-all").addEventListener("click",()=>setView(document.querySelector(".nav-item.active")?.dataset.view||"dashboard"));
-  $("refresh-quality").addEventListener("click",loadQuality);
+  $("refresh-quality").addEventListener("click",loadQuality);$("export-arabic-names").addEventListener("click",exportArabicNames);
   $("add-drug").addEventListener("click",resetDrug);$("add-drug-2").addEventListener("click",resetDrug);
   $("drug-form").addEventListener("submit",saveDrug);$("ingredient-form").addEventListener("submit",saveIngredient);
   $("drug-prev").addEventListener("click",()=>{if(drugPage>0){drugPage--;loadDrugs()}});
