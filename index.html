@@ -24,7 +24,7 @@
       <div class="sidebar-brand"><span class="brand-mark small"><i data-lucide="pill"></i></span><div><strong>Egydrugs</strong><small>Admin</small></div></div>
       <nav class="nav">
         <button class="nav-item active" data-view="dashboard"><i data-lucide="layout-dashboard"></i><span>الرئيسية</span></button>
-        <button class="nav-item" data-view="drugs"><i data-lucide="database"></i><span>الأدوية</span></button>
+        <button class="nav-item" data-view="drugs"><i data-lucide="database"></i><span>الأدوية</span></button><button class="nav-item" data-view="database"><i data-lucide="table-2"></i><span>قاعدة البيانات</span></button>
         <button class="nav-item" data-view="ingredients"><i data-lucide="flask-conical"></i><span>المواد الفعالة</span></button>
         <button class="nav-item" data-view="quality"><i data-lucide="shield-check"></i><span>جودة البيانات</span></button>
       </nav>
@@ -50,6 +50,33 @@
         <div class="toolbar-panel"><div class="search-box"><i data-lucide="search"></i><input id="drug-search" placeholder="ابحث بالاسم التجاري أو المادة الفعالة أو الاسم العربي..." autocomplete="off"></div><div class="toolbar-actions"><label class="quick-filter"><input id="missing-arabic-only" type="checkbox"> الأسماء العربية الناقصة</label><button id="clear-drug-search" class="secondary-button">مسح</button><button id="add-drug-2" class="primary-button"><i data-lucide="plus"></i> إضافة دواء</button></div></div>
         <div class="panel table-panel"><div class="panel-heading"><div><h3>قائمة الأدوية</h3><p id="drug-result-note">جاري التحميل...</p><span id="drug-unsaved-note" class="unsaved-note" hidden>يوجد تعديل غير محفوظ</span></div></div><div class="table-wrap"><table><thead><tr><th>الدواء</th><th>الاسم العربي السريع</th><th>المادة الفعالة</th><th>الشركة</th><th>السعر</th><th>إجراءات</th></tr></thead><tbody id="drugs-body"></tbody></table><div id="drugs-empty" class="empty-state" hidden><i data-lucide="search-x"></i><p>لا توجد نتائج.</p></div></div><div class="pagination"><button id="drug-prev" class="secondary-button">السابق</button><span id="drug-page">صفحة 1</span><button id="drug-next" class="secondary-button">التالي</button></div></div>
       </section>
+      <section id="view-database" class="view">
+        <div class="database-toolbar">
+          <div>
+            <h3>قاعدة البيانات</h3>
+            <p>عرض وتعديل الأدوية مثل Excel. عدّل الخلايا ثم اضغط حفظ.</p>
+          </div>
+          <div class="database-actions">
+            <input id="database-search" class="database-search" placeholder="ابحث في كل البيانات..." autocomplete="off">
+            <button id="database-save-all" class="primary-button"><i data-lucide="save"></i> حفظ التعديلات</button>
+          </div>
+        </div>
+        <div class="panel spreadsheet-panel">
+          <div class="spreadsheet-wrap">
+            <table class="spreadsheet">
+              <thead><tr>
+                <th>ID</th><th>الاسم الإنجليزي</th><th>الاسم العربي</th><th>المادة الفعالة</th><th>الشركة</th><th>التصنيف</th><th>الشكل الدوائي</th><th>السعر</th><th>الجرعة</th>
+              </tr></thead>
+              <tbody id="database-body"></tbody>
+            </table>
+          </div>
+          <div class="database-footer">
+            <button id="database-prev" class="secondary-button">السابق</button>
+            <span id="database-page">صفحة 1</span>
+            <button id="database-next" class="secondary-button">التالي</button>
+          </div>
+        </div>
+      </section>
       <section id="view-ingredients" class="view">
         <div class="toolbar-panel"><div class="search-box"><i data-lucide="search"></i><input id="ingredient-search" placeholder="ابحث عن مادة فعالة..." autocomplete="off"></div><p class="toolbar-note">المعلومات هنا مركزية: أي تعديل للمادة الفعالة يظهر لكل الأدوية التي تحتوي عليها.</p></div>
         <div class="panel table-panel"><div class="panel-heading"><div><h3>المواد الفعالة</h3><p id="ingredient-result-note">جاري التحميل...</p></div></div><div class="table-wrap"><table><thead><tr><th>المادة الفعالة</th><th>عدد المنتجات</th><th>الحالة الطبية</th><th>إجراء</th></tr></thead><tbody id="ingredients-body"></tbody></table><div id="ingredients-empty" class="empty-state" hidden><i data-lucide="flask-conical"></i><p>لا توجد نتائج.</p></div></div><div class="pagination"><button id="ingredient-prev" class="secondary-button">السابق</button><span id="ingredient-page">صفحة 1</span><button id="ingredient-next" class="secondary-button">التالي</button></div></div>
@@ -63,6 +90,6 @@
   <dialog id="ingredient-dialog" class="modal wide-modal"><form id="ingredient-form"><header class="modal-header"><div><span class="eyebrow">معلومات مركزية</span><h3 id="ingredient-dialog-title">المادة الفعالة</h3><p id="ingredient-product-count"></p></div><button type="button" class="icon-button" data-close="ingredient-dialog"><i data-lucide="x"></i></button></header><input id="ingredient-key" type="hidden"><div class="form-grid">
     <label class="full">اسم العرض<input id="ingredient-display-name" required></label><label class="full">الاستخدامات <small>كل استخدام في سطر — English.</small><textarea id="ingredient-uses" rows="7"></textarea></label><label class="full">الجرعات <small>كل جرعة في سطر — English.</small><textarea id="ingredient-dosage" rows="7"></textarea></label><label class="full">الأعراض الجانبية المحتملة <small>كل عرض في سطر — English.</small><textarea id="ingredient-side-effects" rows="7"></textarea></label><label class="full">موانع الاستخدام <small>كل مانع في سطر — English.</small><textarea id="ingredient-contraindications" rows="7"></textarea></label><label>رابط المصدر الطبي<input id="ingredient-source-url" type="url" placeholder="https://..."></label><label>اسم المصدر الطبي<input id="ingredient-source-name" placeholder="مثال: النشرة المعتمدة"></label>
   </div><div class="central-note"><i data-lucide="info"></i><span>لن يتم تكرار نفس البيانات في كل منتج. المادة الفعالة هي المصدر المركزي للمعلومات المشتركة.</span></div><p id="ingredient-error" class="form-error"></p><footer class="modal-footer"><button type="button" class="secondary-button" data-close="ingredient-dialog">إلغاء</button><button class="primary-button" type="submit">حفظ المادة الفعالة</button></footer></form></dialog>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="https://unpkg.com/lucide@latest"></script><script src="app.js?v=20261004-3"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="https://unpkg.com/lucide@latest"></script><script src="app.js?v=20261004-4"></script>
 </body>
 </html>
