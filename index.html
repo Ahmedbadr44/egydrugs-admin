@@ -25,7 +25,7 @@
       <nav class="nav">
         <button class="nav-item active" data-view="dashboard"><i data-lucide="layout-dashboard"></i><span>الرئيسية</span></button>
         <button class="nav-item" data-view="drugs"><i data-lucide="database"></i><span>الأدوية</span></button><button class="nav-item" data-view="database"><i data-lucide="table-2"></i><span>قاعدة البيانات</span></button>
-        <button class="nav-item" data-view="ingredients"><i data-lucide="flask-conical"></i><span>المواد الفعالة</span></button>
+        
         <button class="nav-item" data-view="quality"><i data-lucide="shield-check"></i><span>جودة البيانات</span></button>
       </nav>
       <div class="sidebar-bottom">
@@ -76,10 +76,6 @@
             <button id="database-next" class="secondary-button">التالي</button>
           </div>
         </div>
-      </section>
-      <section id="view-ingredients" class="view">
-        <div class="toolbar-panel"><div class="search-box"><i data-lucide="search"></i><input id="ingredient-search" placeholder="ابحث عن مادة فعالة..." autocomplete="off"></div><p class="toolbar-note">المعلومات هنا مركزية: أي تعديل للمادة الفعالة يظهر لكل الأدوية التي تحتوي عليها.</p></div>
-        <div class="panel table-panel"><div class="panel-heading"><div><h3>المواد الفعالة</h3><p id="ingredient-result-note">جاري التحميل...</p></div></div><div class="table-wrap"><table><thead><tr><th>المادة الفعالة</th><th>عدد المنتجات</th><th>الحالة الطبية</th><th>إجراء</th></tr></thead><tbody id="ingredients-body"></tbody></table><div id="ingredients-empty" class="empty-state" hidden><i data-lucide="flask-conical"></i><p>لا توجد نتائج.</p></div></div><div class="pagination"><button id="ingredient-prev" class="secondary-button">السابق</button><span id="ingredient-page">صفحة 1</span><button id="ingredient-next" class="secondary-button">التالي</button></div></div>
       </section>
       <section id="view-quality" class="view"><div class="stats-grid" id="quality-stats"></div><section class="panel"><div class="panel-heading"><div><h3>مراجعة جودة البيانات</h3><p>الأرقام تتحدث مباشرة من قاعدة البيانات.</p></div><button id="refresh-quality" class="secondary-button"><i data-lucide="refresh-cw"></i> تحديث</button></div><div id="quality-table" class="quality-table"></div></section></section>
     </main>
