@@ -150,7 +150,7 @@ async function saveDatabase(){
   let count=0;
   for(const row of rows){
     const id=row.dataset.id,p={};
-    row.querySelectorAll("input[data-field]").forEach(input=>{const v=input.value.trim();p[input.dataset.field]=input.dataset.field==="price_egp"?(v===""?null:Number(v)):(v||null)});
+    row.querySelectorAll("input[data-field]").forEach(input=>{const v=input.value.trim();p[input.dataset.field]=input.dataset.field==="price_egp"?(v===""?null:Number(v)):v});
     const r=await client.from("drugs").update(p).eq("id",id);
     if(r.error){say("تعذر حفظ الدواء رقم "+id+": "+r.error.message,true);return}
     count++;
@@ -197,7 +197,7 @@ async function saveDrug(e){
 async function saveArabicInline(id,input){
   const value=input.value.trim();
   input.disabled=true;
-  const r=await client.from("drugs").update({commercial_name_ar:value||null}).eq("id",id);
+  const r=await client.from("drugs").update({commercial_name_ar:value}).eq("id",id);
   input.disabled=false;
   if(r.error){say("تعذر حفظ الاسم العربي: "+r.error.message,true);return}
   say("تم حفظ الاسم العربي.");
