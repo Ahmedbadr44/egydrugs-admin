@@ -155,13 +155,13 @@ async function deleteDrug(id){
   say("تم حذف الدواء.");await loadDrugs();await loadDashboard();
 }
 async function openIngredient(key){
-  const r=await client.from("active_ingredient_medical_info").select("ingredient_key,display_name,uses,side_effects,source_url,source_name").eq("ingredient_key",key).maybeSingle();
+  const r=await client.from("active_ingredient_medical_info").select("ingredient_key,display_name,uses,dosage,side_effects,contraindications,source_url,source_name").eq("ingredient_key",key).maybeSingle();
   if(r.error){say("تعذر تحميل المعلومات الطبية: "+r.error.message,true);return}
   const list=await client.rpc("list_active_ingredients",{p_search:key,p_limit:200,p_offset:0});
   const m=(list.data||[]).find(x=>x.ingredient_key===key);
   $("ingredient-dialog-title").textContent=r.data?.display_name||key;$("ingredient-key").value=key;
-  $("ingredient-display-name").value=r.data?.display_name||key;$("ingredient-uses").value=(r.data?.uses||[]).join("\n");
-  $("ingredient-side-effects").value=(r.data?.side_effects||[]).join("\n");$("ingredient-source-url").value=r.data?.source_url||"";
+  $("ingredient-display-name").value=r.data?.display_name||key;$("ingredient-uses").value=(r.data?.uses||[]).join("\n");$("ingredient-dosage").value=(r.data?.dosage||[]).join("\n");
+  $("ingredient-side-effects").value=(r.data?.side_effects||[]).join("\n");$("ingredient-contraindications").value=(r.data?.contraindications||[]).join("\n");$("ingredient-source-url").value=r.data?.source_url||"";
   $("ingredient-source-name").value=r.data?.source_name||"";$("ingredient-product-count").textContent=m?num(m.product_count)+" منتج يستخدم هذه المادة الفعالة":"";
   $("ingredient-error").textContent="";$("ingredient-dialog").showModal();
 }
@@ -170,7 +170,7 @@ async function saveIngredient(e){
   const key=$("ingredient-key").value.trim(),name=$("ingredient-display-name").value.trim();
   if(!key||!name){$("ingredient-error").textContent="اسم المادة الفعالة مطلوب.";return}
   const r=await client.from("active_ingredient_medical_info").upsert({
-    ingredient_key:key,display_name:name,uses:lines($("ingredient-uses").value),side_effects:lines($("ingredient-side-effects").value),
+    ingredient_key:key,display_name:name,uses:lines($("ingredient-uses").value),dosage:lines($("ingredient-dosage").value),side_effects:lines($("ingredient-side-effects").value),contraindications:lines($("ingredient-contraindications").value),
     source_url:$("ingredient-source-url").value.trim()||null,source_name:$("ingredient-source-name").value.trim()||null
   },{onConflict:"ingredient_key"});
   if(r.error){$("ingredient-error").textContent="تعذر حفظ المادة الفعالة: "+r.error.message;return}
