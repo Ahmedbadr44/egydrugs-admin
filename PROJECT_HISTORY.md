@@ -465,3 +465,9 @@ Before changing anything:
   - COSMETIC -> Cosmetic Uses
 - The test transaction was rolled back so product classification was not changed during verification.
 - Set `public.drug_medical_effective` to `security_invoker = true` so the view follows the querying role's RLS behavior on PostgreSQL 15+.
+## 21. 2026-10-05 — Paracetamol ingredient card populated
+- Populated `PARACETAMOL` in `active_ingredient_medical_info`.
+- Medical Uses, dosage, possible side effects, and contraindications were entered as English line/list items.
+- Cosmetic Uses intentionally left empty because no established cosmetic use was identified for Paracetamol from the reviewed PubMed evidence.
+- Source recorded as PubMed.
+- The evidence set included PubMed reviews/studies covering analgesic/antipyretic use, adult dosing, pediatric dosing, hypersensitivity, and overdose hepatotoxicity.
