@@ -490,3 +490,10 @@ Before changing anything:
 - Current database coverage from this import: 90 active-ingredient records + 10 combination records.
 - The supplied dataset is recorded as `PubMed/FDA (provided dataset)`; individual source URLs were not present in the supplied file and were therefore not fabricated.
 - The dataset file explicitly describes its 100 records as based on PubMed clinical literature and FDA monographs.
+
+## 28. 2026-10-06 — Replaced Top 100 scientific dataset with Medscape version
+- Replaced the previously imported Top 100 scientific values with the user-provided Medscape Reference Drug Monographs dataset.
+- Updated all 90 single active-ingredient records and all 10 combination records.
+- Old source labels were replaced with `Medscape Reference Drug Monographs`; source URLs were cleared because the supplied file did not contain individual URLs.
+- Preserved the existing architecture: single-ingredient data lives in `active_ingredient_medical_info`; combination data lives in `drug_combination_medical_info`.
+- Paracetamol now uses the Medscape wording supplied in the new dataset.
