@@ -480,3 +480,13 @@ Before changing anything:
 - Added `drug_medical_info.contraindications` as a JSONB field.
 - Mobile app now reads the unified `drug_medical_effective` view so the same source-selection rules apply consistently.
 - Verified with a transaction that a combination product can return its own Uses/Dosage/Side Effects/Contraindications, while the test data is rolled back afterward.
+
+
+## 27. 2026-10-06 — Imported Top 100 active-ingredient/compound dataset
+- Loaded the user-provided 100-entry clinical dataset into the scientific-data model.
+- 90 single entries were imported into `active_ingredient_medical_info` with Medical Uses, Dosage, Side Effects, and Contraindications; Cosmetic Uses remain empty because the supplied dataset did not provide cosmetic indications.
+- 10 multi-ingredient entries were imported into `drug_combination_medical_info` as combination-level Scientific Data.
+- Combination keys use normalized, sorted active-ingredient components so the same combination can share one Scientific Data record across multiple commercial products.
+- Current database coverage from this import: 90 active-ingredient records + 10 combination records.
+- The supplied dataset is recorded as `PubMed/FDA (provided dataset)`; individual source URLs were not present in the supplied file and were therefore not fabricated.
+- The dataset file explicitly describes its 100 records as based on PubMed clinical literature and FDA monographs.
