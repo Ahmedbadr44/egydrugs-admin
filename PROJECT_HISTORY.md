@@ -497,3 +497,12 @@ Before changing anything:
 - Old source labels were replaced with `Medscape Reference Drug Monographs`; source URLs were cleared because the supplied file did not contain individual URLs.
 - Preserved the existing architecture: single-ingredient data lives in `active_ingredient_medical_info`; combination data lives in `drug_combination_medical_info`.
 - Paracetamol now uses the Medscape wording supplied in the new dataset.
+
+
+## 29. 2026-10-06 — English dosage-reference dataset imported
+- Replaced the previous mixed-language dosage-reference content in `public.dosage_reference` with the newly supplied English 200-entry dataset.
+- Preserved the existing dosage architecture and normalized ingredient keys, including `AMOXICILLIN+CLAVULANIC ACID` for the combination record.
+- Verified 200 rows remain: 199 single-ingredient records and 1 combination record, with Adult and Pediatric Dose populated for every row.
+- Verified the imported clinical fields are free of Arabic characters.
+- Created `public.dosage_reference_before_english_20261006` as a backup before replacement.
+- Imported the supplied English wording directly rather than performing blind string translation.
