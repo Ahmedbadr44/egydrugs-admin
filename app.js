@@ -302,7 +302,12 @@ function attach(){
   $("database-prev").addEventListener("click",()=>{if(databasePage>0){databasePage--;loadDatabase()}});
   $("database-next").addEventListener("click",()=>{if(databaseHasMore){databasePage++;loadDatabase()}});
   $("add-drug").addEventListener("click",resetDrug);$("add-drug-2").addEventListener("click",resetDrug);
-  $("drug-form").addEventListener("submit",saveDrug);\n  $("ingredient-form").addEventListener("submit",saveIngredient);\n  $("ingredient-prev").addEventListener("click",()=>{if(ingredientPage>0){ingredientPage--;loadIngredients()}});\n  $("ingredient-next").addEventListener("click",()=>{if(ingredientHasMore){ingredientPage++;loadIngredients()}});\n  $("ingredient-search").addEventListener("input",()=>{clearTimeout(ingredientSearchTimer);ingredientSearchTimer=setTimeout(()=>{ingredientPage=0;loadIngredients()},250)});\n  $("clear-ingredient-search").addEventListener("click",()=>{$("ingredient-search").value="";ingredientPage=0;loadIngredients()});
+  $("drug-form").addEventListener("submit",saveDrug);
+  $("ingredient-form").addEventListener("submit",saveIngredient);
+  $("ingredient-prev").addEventListener("click",()=>{if(ingredientPage>0){ingredientPage--;loadIngredients()}});
+  $("ingredient-next").addEventListener("click",()=>{if(ingredientHasMore){ingredientPage++;loadIngredients()}});
+  $("ingredient-search").addEventListener("input",()=>{clearTimeout(ingredientSearchTimer);ingredientSearchTimer=setTimeout(()=>{ingredientPage=0;loadIngredients()},250)});
+  $("clear-ingredient-search").addEventListener("click",()=>{$("ingredient-search").value="";ingredientPage=0;loadIngredients()});
   $("drug-prev").addEventListener("click",()=>{if(drugPage>0){drugPage--;loadDrugs()}});
   $("drug-next").addEventListener("click",()=>{if(drugHasMore){drugPage++;loadDrugs()}});
   $("clear-drug-search").addEventListener("click",()=>{$("drug-search").value="";$("missing-arabic-only").checked=false;missingArabicOnly=false;drugPage=0;loadDrugs()});
