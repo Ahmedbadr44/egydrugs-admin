@@ -471,3 +471,12 @@ Before changing anything:
 - Cosmetic Uses intentionally left empty because no established cosmetic use was identified for Paracetamol from the reviewed PubMed evidence.
 - Source recorded as PubMed.
 - The evidence set included PubMed reviews/studies covering analgesic/antipyretic use, adult dosing, pediatric dosing, hypersensitivity, and overdose hepatotoxicity.
+
+## 26. 2026-10-06 — Combination scientific-data architecture
+- Added product-specific Scientific Data editing for multi-ingredient medicines in the admin panel using `drug_medical_info`.
+- Multi-ingredient products now have dedicated fields for Combination Uses, Combination Dosage, Combination Side Effects, Combination Contraindications, and Source.
+- Updated `drug_medical_effective` so multi-ingredient products use product-specific `drug_medical_info` and do not automatically inherit single-ingredient data.
+- Single-ingredient products continue using the active ingredient's Medical Uses or Cosmetic Uses according to `product_type`.
+- Added `drug_medical_info.contraindications` as a JSONB field.
+- Mobile app now reads the unified `drug_medical_effective` view so the same source-selection rules apply consistently.
+- Verified with a transaction that a combination product can return its own Uses/Dosage/Side Effects/Contraindications, while the test data is rolled back afterward.
