@@ -24,7 +24,7 @@
       <div class="sidebar-brand"><span class="brand-mark small"><i data-lucide="pill"></i></span><div><strong>Egydrugs</strong><small>Admin</small></div></div>
       <nav class="nav">
         
-        <button class="nav-item active" data-view="drugs"><i data-lucide="database"></i><span>الأدوية</span></button><button class="nav-item" data-view="database"><i data-lucide="table-2"></i><span>قاعدة البيانات</span></button>
+        <button class="nav-item active" data-view="drugs"><i data-lucide="database"></i><span>الأدوية</span></button><button class="nav-item" data-view="ingredients"><i data-lucide="flask-conical"></i><span>المواد الفعالة</span></button><button class="nav-item" data-view="database"><i data-lucide="table-2"></i><span>قاعدة البيانات</span></button>
         
         <button class="nav-item" data-view="quality"><i data-lucide="shield-check"></i><span>جودة البيانات</span></button>
       </nav>
@@ -41,6 +41,17 @@
       <section id="view-drugs" class="view">
         <div class="toolbar-panel"><div class="search-box"><i data-lucide="search"></i><input id="drug-search" placeholder="ابحث بالاسم التجاري أو المادة الفعالة أو الاسم العربي..." autocomplete="off"></div><div class="toolbar-actions"><label class="quick-filter"><input id="missing-arabic-only" type="checkbox"> الأسماء العربية الناقصة</label><button id="clear-drug-search" class="secondary-button">مسح</button><button id="add-drug-2" class="primary-button"><i data-lucide="plus"></i> إضافة دواء</button></div></div>
         <div class="panel table-panel"><div class="panel-heading"><div><h3>قائمة الأدوية</h3><p id="drug-result-note">جاري التحميل...</p><span id="drug-unsaved-note" class="unsaved-note" hidden>يوجد تعديل غير محفوظ</span></div></div><div class="table-wrap"><table><thead><tr><th>الدواء</th><th>الاسم العربي السريع</th><th>المادة الفعالة</th><th>الشركة</th><th>السعر</th><th>إجراءات</th></tr></thead><tbody id="drugs-body"></tbody></table><div id="drugs-empty" class="empty-state" hidden><i data-lucide="search-x"></i><p>لا توجد نتائج.</p></div></div><div class="pagination"><button id="drug-prev" class="secondary-button">السابق</button><span id="drug-page">صفحة 1</span><button id="drug-next" class="secondary-button">التالي</button></div></div>
+      </section>
+      <section id="view-ingredients" class="view">
+        <div class="toolbar-panel">
+          <div class="search-box"><i data-lucide="search"></i><input id="ingredient-search" placeholder="ابحث عن المادة الفعالة..." autocomplete="off"></div>
+          <div class="toolbar-actions"><button id="clear-ingredient-search" class="secondary-button">مسح</button></div>
+        </div>
+        <div class="panel table-panel">
+          <div class="panel-heading"><div><h3>المواد الفعالة</h3><p id="ingredient-result-note">المعلومات المركزية المشتركة لكل المنتجات.</p></div></div>
+          <div class="table-wrap"><table><thead><tr><th>المادة الفعالة</th><th>عدد المنتجات</th><th>حالة المعلومات</th><th>إجراءات</th></tr></thead><tbody id="ingredients-body"></tbody></table><div id="ingredients-empty" class="empty-state" hidden><i data-lucide="search-x"></i><p>لا توجد مواد فعالة.</p></div></div>
+          <div class="pagination"><button id="ingredient-prev" class="secondary-button">السابق</button><span id="ingredient-page">صفحة 1</span><button id="ingredient-next" class="secondary-button">التالي</button></div>
+        </div>
       </section>
       <section id="view-database" class="view">
         <div class="database-toolbar">
