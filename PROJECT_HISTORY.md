@@ -464,3 +464,4 @@ Before changing anything:
   - MEDICINE -> Medical Uses
   - COSMETIC -> Cosmetic Uses
 - The test transaction was rolled back so product classification was not changed during verification.
+- Set `public.drug_medical_effective` to `security_invoker = true` so the view follows the querying role's RLS behavior on PostgreSQL 15+.
