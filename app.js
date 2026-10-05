@@ -209,17 +209,14 @@ async function openDrug(id){
   const r=await client.from("drugs").select("id,commercial_name_en,commercial_name_ar,scientific_name,manufacturer,drug_class,route,price_egp,product_type").eq("id",id).single();
   if(r.error){say("تعذر تحميل الدواء: "+r.error.message,true);return}
   const d=r.data;$("drug-dialog-title").textContent="تعديل دواء";
-  const m=await client.from("drug_medical_info").select("uses").eq("drug_id",id).maybeSingle();
-  if(m.error){say("تعذر تحميل معلومات الاستخدام: "+m.error.message,true);return}
-  drugMedicalExists=!!m.data;
   $("drug-id").value=d.id;$("name-en").value=d.commercial_name_en||"";$("name-ar").value=d.commercial_name_ar||"";
   $("scientific-name").value=d.scientific_name||"";$("manufacturer").value=d.manufacturer||"";$("drug-class").value=d.drug_class||"";
-  fillRouteSelect($("route"),d.route||"");$("price").value=d.price_egp??"";$("product-type").value=d.product_type||"";$("drug-uses").value=(m.data?.uses||[]).join("\\n");$("drug-error").textContent="";$("drug-dialog").showModal();
+  fillRouteSelect($("route"),d.route||"");$("price").value=d.price_egp??"";$("product-type").value=d.product_type||"";$("drug-error").textContent="";$("drug-dialog").showModal();
   }catch(e){say("تعذر فتح الدواء: "+e.message,true)}
 }
 function resetDrug(){
-  $("drug-dialog-title").textContent="إضافة دواء";$("drug-id").value="";drugMedicalExists=false;
-  ["name-en","name-ar","scientific-name","manufacturer","drug-class","price","drug-uses"].forEach(id=>$(id).value="");$("product-type").value="";fillRouteSelect($("route"));
+  $("drug-dialog-title").textContent="إضافة دواء";$("drug-id").value="";
+  ["name-en","name-ar","scientific-name","manufacturer","drug-class","price"].forEach(id=>$(id).value="");$("product-type").value="";fillRouteSelect($("route"));
   $("drug-error").textContent="";$("drug-dialog").showModal();
 }
 async function saveDrug(e){
@@ -233,20 +230,10 @@ async function saveDrug(e){
     product_type:$("product-type").value||null
   };
   const id=$("drug-id").value;
-  let drugId=id||null;
-  let r;
-  if(id){
-    r=await client.from("drugs").update(p).eq("id",id).select("id").single();
-  }else{
-    r=await client.from("drugs").insert(p).select("id").single();
-    if(!r.error) drugId=r.data.id;
-  }
+  const r=id
+    ?await client.from("drugs").update(p).eq("id",id)
+    :await client.from("drugs").insert(p);
   if(r.error){$("drug-error").textContent="تعذر الحفظ: "+r.error.message;return}
-  const uses=lines($("drug-uses").value);
-  if(uses.length||drugMedicalExists){
-    const m=await client.from("drug_medical_info").upsert({drug_id:Number(drugId),uses},{onConflict:"drug_id"});
-    if(m.error){$("drug-error").textContent="تم حفظ بيانات المنتج لكن تعذر حفظ الاستخدامات: "+m.error.message;return}
-  }
   $("drug-dialog").close();say(id?"تم تعديل الدواء.":"تمت إضافة الدواء.");await loadDrugs();
 }
 async function saveArabicInline(id,input){
