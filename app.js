@@ -302,7 +302,7 @@ function attach(){
   $("database-prev").addEventListener("click",()=>{if(databasePage>0){databasePage--;loadDatabase()}});
   $("database-next").addEventListener("click",()=>{if(databaseHasMore){databasePage++;loadDatabase()}});
   $("add-drug").addEventListener("click",resetDrug);$("add-drug-2").addEventListener("click",resetDrug);
-  $("drug-form").addEventListener("submit",saveDrug);
+  $("drug-form").addEventListener("submit",saveDrug);\n  $("ingredient-form").addEventListener("submit",saveIngredient);\n  $("ingredient-prev").addEventListener("click",()=>{if(ingredientPage>0){ingredientPage--;loadIngredients()}});\n  $("ingredient-next").addEventListener("click",()=>{if(ingredientHasMore){ingredientPage++;loadIngredients()}});\n  $("ingredient-search").addEventListener("input",()=>{clearTimeout(ingredientSearchTimer);ingredientSearchTimer=setTimeout(()=>{ingredientPage=0;loadIngredients()},250)});\n  $("clear-ingredient-search").addEventListener("click",()=>{$("ingredient-search").value="";ingredientPage=0;loadIngredients()});
   $("drug-prev").addEventListener("click",()=>{if(drugPage>0){drugPage--;loadDrugs()}});
   $("drug-next").addEventListener("click",()=>{if(drugHasMore){drugPage++;loadDrugs()}});
   $("clear-drug-search").addEventListener("click",()=>{$("drug-search").value="";$("missing-arabic-only").checked=false;missingArabicOnly=false;drugPage=0;loadDrugs()});
@@ -319,6 +319,7 @@ function attach(){
       const input=document.querySelector(`.arabic-inline[data-id="${b.dataset.id}"]`);
       if(input)saveArabicInline(b.dataset.id,input);
     }
+    if(b.dataset.action==="edit-ingredient")openIngredient(b.dataset.key);
   });
   $("login-form").addEventListener("submit",async e=>{e.preventDefault();$("login-error").textContent="";const r=await client.auth.signInWithPassword({email:$("login-email").value.trim(),password:$("login-password").value});if(r.error){$("login-error").textContent="تعذر تسجيل الدخول. راجع البريد وكلمة المرور.";return}await openApp(r.data.session)})
 }
