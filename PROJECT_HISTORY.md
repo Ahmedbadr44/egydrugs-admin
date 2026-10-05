@@ -448,3 +448,19 @@ Before changing anything:
 - Avoid unnecessary redesigns.
 - Avoid destructive SQL unless explicitly requested and verified.
 - Never store credentials in project history.
+
+## 20. 2026-10-05 — Active ingredient Uses routing
+- Confirmed the central active-ingredient model with two separate fields:
+  - medical_uses
+  - cosmetic_uses
+- Added a visible **المواد الفعالة / Active Ingredients** section to the admin panel.
+- The section supports searching ingredients, showing product counts, opening an ingredient editor, and saving its centralized information.
+- The ingredient editor keeps Medical Uses and Cosmetic Uses as separate English line-based fields.
+- Updated public.drug_medical_effective so uses is selected automatically from:
+  - medical_uses when product_type = MEDICINE
+  - cosmetic_uses when product_type = COSMETIC
+  - empty uses for other/unclassified product types
+- Verified the routing on Paracetamol in a transaction:
+  - MEDICINE -> Medical Uses
+  - COSMETIC -> Cosmetic Uses
+- The test transaction was rolled back so product classification was not changed during verification.
