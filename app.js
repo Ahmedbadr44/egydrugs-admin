@@ -25,7 +25,7 @@ function toggleCombinationData(value){
   wrap.hidden=!show;
 }
 function clearCombinationFields(){
-  ["combination-uses","combination-dosages","combination-side-effects","combination-contraindications","combination-source-url","combination-source-name"].forEach(id=>{if($(id))$(id).value=""});
+  ["combination-uses","combination-side-effects","combination-contraindications","combination-source-url","combination-source-name"].forEach(id=>{if($(id))$(id).value=""});
 }
 async function isAdmin(userId){
   const r=await client.from("drug_admins").select("user_id").eq("user_id",userId).maybeSingle();
@@ -124,7 +124,7 @@ async function loadDashboard(){
 }
 async function loadDrugs(){
   const term=$("drug-search").value.trim(),from=drugPage*PAGE_SIZE;
-  let q=client.from("drugs").select("id,commercial_name_en,commercial_name_ar,scientific_name,manufacturer,price_egp,dosage,product_type").order("id",{ascending:false}).range(from,from+PAGE_SIZE);
+  let q=client.from("drugs").select("id,commercial_name_en,commercial_name_ar,scientific_name,manufacturer,price_egp,product_type").order("id",{ascending:false}).range(from,from+PAGE_SIZE);
   if(term){
     const p="%"+term+"%";
     q=q.or("commercial_name_en.ilike."+p+",commercial_name_ar.ilike."+p+",scientific_name.ilike."+p);
@@ -141,10 +141,10 @@ async function loadDrugs(){
 }
 async function loadDatabase(){
   const term=$("database-search").value.trim(),from=databasePage*100;
-  let q=client.from("drugs").select("id,commercial_name_en,commercial_name_ar,scientific_name,manufacturer,drug_class,use,price_egp").order("id",{ascending:true}).range(from,from+99);
+  let q=client.from("drugs").select("id,commercial_name_en,commercial_name_ar,scientific_name,manufacturer,description,use,price_egp").order("id",{ascending:true}).range(from,from+99);
   if(term){
     const p="%"+term+"%";
-    q=q.or("commercial_name_en.ilike."+p+",commercial_name_ar.ilike."+p+",scientific_name.ilike."+p+",manufacturer.ilike."+p+",drug_class.ilike."+p+",use.ilike."+p);
+    q=q.or("commercial_name_en.ilike."+p+",commercial_name_ar.ilike."+p+",scientific_name.ilike."+p+",manufacturer.ilike."+p+",description.ilike."+p+",use.ilike."+p);
   }
   const r=await q;
   if(r.error){say("تعذر تحميل قاعدة البيانات: "+r.error.message,true);return}
@@ -152,7 +152,7 @@ async function loadDatabase(){
   databaseRows=r.data.slice(0,100);
   const body=$("database-body");
   body.innerHTML="";
-  const fields=["commercial_name_en","commercial_name_ar","scientific_name","manufacturer","drug_class","use","price_egp"];
+  const fields=["commercial_name_en","commercial_name_ar","scientific_name","manufacturer","description","use","price_egp"];
   databaseRows.forEach(d=>{
     const tr=document.createElement("tr");
     tr.dataset.id=d.id;
@@ -174,7 +174,7 @@ async function loadDatabase(){
       }else{
         input.value=d[field]||"";
         if(field==="manufacturer")
-        if(field==="drug_class")
+        if(field==="description")
         input.autocomplete="off";
         td.appendChild(input);
       }
@@ -219,22 +219,22 @@ async function loadIngredients(){
 }
 async function openDrug(id){
   try{
-  const r=await client.from("drugs").select("id,commercial_name_en,commercial_name_ar,scientific_name,manufacturer,drug_class,use,price_egp,product_type").eq("id",id).single();
+  const r=await client.from("drugs").select("id,commercial_name_en,commercial_name_ar,scientific_name,manufacturer,description,use,price_egp,product_type").eq("id",id).single();
   if(r.error){say("تعذر تحميل الدواء: "+r.error.message,true);return}
   const d=r.data;
   const combo=isCombinationScientific(d.scientific_name);
   let info=null;
   if(combo){
-    const m=await client.from("drug_medical_info").select("uses,dosages,side_effects,contraindications,source_url,source_name").eq("drug_id",id).maybeSingle();
+    const m=await client.from("drug_medical_info").select("uses,side_effects,contraindications,source_url,source_name").eq("drug_id",id).maybeSingle();
     if(m.error){say("تعذر تحميل Scientific Data للتركيبة: "+m.error.message,true);return}
     info=m.data||null;
   }
   $("drug-dialog-title").textContent="تعديل دواء";
   $("drug-id").value=d.id;$("name-en").value=d.commercial_name_en||"";$("name-ar").value=d.commercial_name_ar||"";
-  $("scientific-name").value=d.scientific_name||"";$("manufacturer").value=d.manufacturer||"";$("drug-class").value=d.drug_class||"";
+  $("scientific-name").value=d.scientific_name||"";$("manufacturer").value=d.manufacturer||"";$("description").value=d.description||"";
   $("use").value=d.use||"";$("price").value=d.price_egp??"";$("product-type").value=d.product_type||"";
   $("combination-uses").value=(info?.uses||[]).map(x=>typeof x==="string"?x:x?.use||x?.text||"").filter(Boolean).join("\n");
-  $("combination-dosages").value=(info?.dosages||[]).map(x=>typeof x==="string"?x:x?.use||x?.text||"").filter(Boolean).join("\n");
+  
   $("combination-side-effects").value=(info?.side_effects||[]).map(x=>typeof x==="string"?x:x?.use||x?.text||"").filter(Boolean).join("\n");
   $("combination-contraindications").value=(info?.contraindications||[]).map(x=>typeof x==="string"?x:x?.use||x?.text||"").filter(Boolean).join("\n");
   $("combination-source-url").value=info?.source_url||"";
@@ -245,7 +245,7 @@ async function openDrug(id){
 }
 function resetDrug(){
   $("drug-dialog-title").textContent="إضافة دواء";$("drug-id").value="";
-  ["name-en","name-ar","scientific-name","manufacturer","drug-class","use","price"].forEach(id=>$(id).value="");$("product-type").value="";
+  ["name-en","name-ar","scientific-name","manufacturer","description","use","price"].forEach(id=>$(id).value="");$("product-type").value="";
   clearCombinationFields();toggleCombinationData("");
   $("drug-error").textContent="";$("drug-dialog").showModal();
 }
@@ -258,7 +258,7 @@ async function saveDrug(e){
   const p={
     commercial_name_en:$("name-en").value.trim(),commercial_name_ar:$("name-ar").value.trim(),
     scientific_name:scientific,manufacturer:$("manufacturer").value.trim(),
-    drug_class:$("drug-class").value.trim(),use:$("use").value.trim(),price_egp:price,
+    description:$("description").value.trim(),use:$("use").value.trim(),price_egp:price,
     product_type:$("product-type").value||null
   };
   const existingId=$("drug-id").value;
@@ -272,7 +272,7 @@ async function saveDrug(e){
     const comboInfo={
       drug_id:id,
       uses:lines($("combination-uses").value),
-      dosages:lines($("combination-dosages").value),
+      
       side_effects:lines($("combination-side-effects").value),
       contraindications:lines($("combination-contraindications").value),
       source_url:$("combination-source-url").value.trim()||null,
@@ -300,12 +300,12 @@ async function deleteDrug(id){
   say("تم حذف الدواء.");await loadDrugs();
 }
 async function openIngredient(key){
-  const r=await client.from("active_ingredient_medical_info").select("ingredient_key,display_name,medical_uses,cosmetic_uses,dosage,side_effects,contraindications,source_url,source_name").eq("ingredient_key",key).maybeSingle();
+  const r=await client.from("active_ingredient_medical_info").select("ingredient_key,display_name,medical_uses,cosmetic_uses,side_effects,contraindications,source_url,source_name").eq("ingredient_key",key).maybeSingle();
   if(r.error){say("تعذر تحميل المعلومات الطبية: "+r.error.message,true);return}
   const list=await client.rpc("list_active_ingredients",{p_search:key,p_limit:200,p_offset:0});
   const m=(list.data||[]).find(x=>x.ingredient_key===key);
   $("ingredient-dialog-title").textContent=r.data?.display_name||key;$("ingredient-key").value=key;
-  $("ingredient-display-name").value=r.data?.display_name||key;$("ingredient-medical-uses").value=(r.data?.medical_uses||[]).join("\n");$("ingredient-cosmetic-uses").value=(r.data?.cosmetic_uses||[]).join("\n");$("ingredient-dosage").value=(r.data?.dosage||[]).join("\n");
+  $("ingredient-display-name").value=r.data?.display_name||key;$("ingredient-medical-uses").value=(r.data?.medical_uses||[]).join("\n");$("ingredient-cosmetic-uses").value=(r.data?.cosmetic_uses||[]).join("\n");
   $("ingredient-side-effects").value=(r.data?.side_effects||[]).join("\n");$("ingredient-contraindications").value=(r.data?.contraindications||[]).join("\n");$("ingredient-source-url").value=r.data?.source_url||"";
   $("ingredient-source-name").value=r.data?.source_name||"";$("ingredient-product-count").textContent=m?num(m.product_count)+" منتج يستخدم هذه المادة الفعالة":"";
   $("ingredient-error").textContent="";$("ingredient-dialog").showModal();
@@ -315,7 +315,7 @@ async function saveIngredient(e){
   const key=$("ingredient-key").value.trim(),name=$("ingredient-display-name").value.trim();
   if(!key||!name){$("ingredient-error").textContent="اسم المادة الفعالة مطلوب.";return}
   const r=await client.from("active_ingredient_medical_info").upsert({
-    ingredient_key:key,display_name:name,medical_uses:lines($("ingredient-medical-uses").value),cosmetic_uses:lines($("ingredient-cosmetic-uses").value),dosage:lines($("ingredient-dosage").value),side_effects:lines($("ingredient-side-effects").value),contraindications:lines($("ingredient-contraindications").value),
+    ingredient_key:key,display_name:name,medical_uses:lines($("ingredient-medical-uses").value),cosmetic_uses:lines($("ingredient-cosmetic-uses").value),side_effects:lines($("ingredient-side-effects").value),contraindications:lines($("ingredient-contraindications").value),
     source_url:$("ingredient-source-url").value.trim()||null,source_name:$("ingredient-source-name").value.trim()||null
   },{onConflict:"ingredient_key"});
   if(r.error){$("ingredient-error").textContent="تعذر حفظ المادة الفعالة: "+r.error.message;return}
