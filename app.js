@@ -13,7 +13,6 @@ function html(v){
   return String(v??"").replace(/[&<>'"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",'"':"&quot;"}[c]));
 }
 function lines(v){return String(v||"").split("\n").map(x=>x.trim()).filter(Boolean)}
-function fillRouteSelect(select,value=""){if(!select)return;select.outerHTML='<input id="route" value="'+html(value||"")+'" autocomplete="off">';}
 function num(v){return new Intl.NumberFormat("ar-EG").format(Number(v||0))}
 function isCombinationScientific(value){
   const parts=String(value||"").split(/[+;,/]+/).map(x=>x.trim()).filter(Boolean);
@@ -142,10 +141,10 @@ async function loadDrugs(){
 }
 async function loadDatabase(){
   const term=$("database-search").value.trim(),from=databasePage*100;
-  let q=client.from("drugs").select("id,commercial_name_en,commercial_name_ar,scientific_name,manufacturer,drug_class,route,price_egp").order("id",{ascending:true}).range(from,from+99);
+  let q=client.from("drugs").select("id,commercial_name_en,commercial_name_ar,scientific_name,manufacturer,drug_class,use,price_egp").order("id",{ascending:true}).range(from,from+99);
   if(term){
     const p="%"+term+"%";
-    q=q.or("commercial_name_en.ilike."+p+",commercial_name_ar.ilike."+p+",scientific_name.ilike."+p+",manufacturer.ilike."+p+",drug_class.ilike."+p);
+    q=q.or("commercial_name_en.ilike."+p+",commercial_name_ar.ilike."+p+",scientific_name.ilike."+p+",manufacturer.ilike."+p+",drug_class.ilike."+p+",use.ilike."+p);
   }
   const r=await q;
   if(r.error){say("تعذر تحميل قاعدة البيانات: "+r.error.message,true);return}
@@ -153,7 +152,7 @@ async function loadDatabase(){
   databaseRows=r.data.slice(0,100);
   const body=$("database-body");
   body.innerHTML="";
-  const fields=["commercial_name_en","commercial_name_ar","scientific_name","manufacturer","drug_class","route","price_egp"];
+  const fields=["commercial_name_en","commercial_name_ar","scientific_name","manufacturer","drug_class","use","price_egp"];
   databaseRows.forEach(d=>{
     const tr=document.createElement("tr");
     tr.dataset.id=d.id;
@@ -163,8 +162,9 @@ async function loadDatabase(){
     tr.appendChild(idCell);
     fields.forEach(field=>{
       const td=document.createElement("td");
-      const input=document.createElement("input");
+      const input=field==="use"?document.createElement("textarea"):document.createElement("input");
       input.dataset.field=field;
+      if(field==="use")input.rows=2;
       if(field==="price_egp"){
         input.type="number";
         input.min="0";
@@ -219,7 +219,7 @@ async function loadIngredients(){
 }
 async function openDrug(id){
   try{
-  const r=await client.from("drugs").select("id,commercial_name_en,commercial_name_ar,scientific_name,manufacturer,drug_class,route,price_egp,product_type").eq("id",id).single();
+  const r=await client.from("drugs").select("id,commercial_name_en,commercial_name_ar,scientific_name,manufacturer,drug_class,use,price_egp,product_type").eq("id",id).single();
   if(r.error){say("تعذر تحميل الدواء: "+r.error.message,true);return}
   const d=r.data;
   const combo=isCombinationScientific(d.scientific_name);
@@ -232,7 +232,7 @@ async function openDrug(id){
   $("drug-dialog-title").textContent="تعديل دواء";
   $("drug-id").value=d.id;$("name-en").value=d.commercial_name_en||"";$("name-ar").value=d.commercial_name_ar||"";
   $("scientific-name").value=d.scientific_name||"";$("manufacturer").value=d.manufacturer||"";$("drug-class").value=d.drug_class||"";
-  fillRouteSelect($("route"),d.route||"");$("price").value=d.price_egp??"";$("product-type").value=d.product_type||"";
+  $("use").value=d.use||"";$("price").value=d.price_egp??"";$("product-type").value=d.product_type||"";
   $("combination-uses").value=(info?.uses||[]).map(x=>typeof x==="string"?x:x?.use||x?.text||"").filter(Boolean).join("\n");
   $("combination-dosages").value=(info?.dosages||[]).map(x=>typeof x==="string"?x:x?.use||x?.text||"").filter(Boolean).join("\n");
   $("combination-side-effects").value=(info?.side_effects||[]).map(x=>typeof x==="string"?x:x?.use||x?.text||"").filter(Boolean).join("\n");
@@ -245,7 +245,7 @@ async function openDrug(id){
 }
 function resetDrug(){
   $("drug-dialog-title").textContent="إضافة دواء";$("drug-id").value="";
-  ["name-en","name-ar","scientific-name","manufacturer","drug-class","price"].forEach(id=>$(id).value="");$("product-type").value="";fillRouteSelect($("route"));
+  ["name-en","name-ar","scientific-name","manufacturer","drug-class","use","price"].forEach(id=>$(id).value="");$("product-type").value="";
   clearCombinationFields();toggleCombinationData("");
   $("drug-error").textContent="";$("drug-dialog").showModal();
 }
@@ -258,7 +258,7 @@ async function saveDrug(e){
   const p={
     commercial_name_en:$("name-en").value.trim(),commercial_name_ar:$("name-ar").value.trim(),
     scientific_name:scientific,manufacturer:$("manufacturer").value.trim(),
-    drug_class:$("drug-class").value.trim(),route:$("route").value.trim(),price_egp:price,
+    drug_class:$("drug-class").value.trim(),use:$("use").value.trim(),price_egp:price,
     product_type:$("product-type").value||null
   };
   const existingId=$("drug-id").value;
